@@ -9,6 +9,7 @@ import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
 import { usePredictions } from '@/hooks/use-predictions';
 
+console.log("API URL from env:", process.env.NEXT_PUBLIC_API_URL); // DEBUG
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
