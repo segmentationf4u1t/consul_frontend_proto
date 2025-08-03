@@ -11,6 +11,8 @@ interface ConnectionStatusIndicatorProps {
   lastRefresh: Date;
   animationsEnabled: boolean;
   onAnimationsToggle: (enabled: boolean) => void;
+  showPredictions: boolean;
+  onShowPredictionsToggle: (enabled: boolean) => void;
 }
 
 const statusDetails = {
@@ -36,7 +38,7 @@ const statusDetails = {
   },
 };
 
-export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animationsEnabled, onAnimationsToggle }: ConnectionStatusIndicatorProps) => {
+export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animationsEnabled, onAnimationsToggle, showPredictions, onShowPredictionsToggle }: ConnectionStatusIndicatorProps) => {
   const details = statusDetails[status];
 
   return (
@@ -45,6 +47,10 @@ export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animations
         <div className="flex items-center gap-2">
             <div className={`h-2 w-2 rounded-full ${details.color} ${details.animation}`} />
             {details.text(lastRefresh)}
+        </div>
+        <div className="flex items-center space-x-2">
+            <Switch id="predictions-toggle-footer" checked={showPredictions} onCheckedChange={onShowPredictionsToggle} />
+            <Label htmlFor="predictions-toggle-footer">Pokaż prognozy</Label>
         </div>
         <div className="flex items-center space-x-2">
             <Switch id="animations-toggle-footer" checked={animationsEnabled} onCheckedChange={onAnimationsToggle} />

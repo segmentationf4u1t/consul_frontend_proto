@@ -17,6 +17,7 @@ interface CampaignsTableProps {
   error: string | null;
   predictions: Map<string, CampaignPrediction>;
   predictionsLoading: boolean;
+  showPredictions: boolean;
 }
 
 const CampaignsTableSkeleton = () => (
@@ -42,7 +43,7 @@ const CampaignsTableSkeleton = () => (
     </Card>
 );
 
-export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading }: CampaignsTableProps) => {
+export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
   }
@@ -52,7 +53,8 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
       ...campaign,
       prediction: predictions.get(campaign.kampanie),
     }));
-    return <DataTable columns={columns} data={extendedData} sorting={sorting} setSorting={setSorting} />;
+    const tableColumns = columns({ showPredictions });
+    return <DataTable columns={tableColumns} data={extendedData} sorting={sorting} setSorting={setSorting} />;
   }
 
   if (error && !data) {

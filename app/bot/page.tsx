@@ -19,6 +19,7 @@ export default function BotPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [showPredictions, setShowPredictions] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
@@ -111,6 +112,7 @@ export default function BotPage() {
             error={error}
             predictions={predictions}
             predictionsLoading={predictionsLoading}
+            showPredictions={showPredictions}
           />
         </section>
         
@@ -119,6 +121,8 @@ export default function BotPage() {
             lastRefresh={lastRefresh} 
             animationsEnabled={animationsEnabled}
             onAnimationsToggle={setAnimationsEnabled}
+            showPredictions={showPredictions}
+            onShowPredictionsToggle={setShowPredictions}
         />
       </div>
     </div>
