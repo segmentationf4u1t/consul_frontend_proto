@@ -33,7 +33,7 @@ export default function BotPage() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:3000/wallboard/events');
+    const eventSource = new EventSource('http://192.168.1.33:3001/wallboard/events');
 
     eventSource.onopen = () => {
       setConnectionStatus('connected');
