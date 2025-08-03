@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { CampaignPrediction } from '@/types/predictions';
 import { CampaignData } from '@/types/wallboard';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
   const [predictions, setPredictions] = useState<Map<string, CampaignPrediction>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchPrediction = useCallback(async (campaignName: string) => {
     try {
-      const response = await fetch(`http://0.0.0.0:3001/predictions/campaigns/${encodeURIComponent(campaignName)}`);
+      const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
       if (!response.ok) {
         throw new Error(`Prediction fetch failed with status: ${response.status}`);
       }

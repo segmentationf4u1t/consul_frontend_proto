@@ -9,6 +9,7 @@ import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
 import { usePredictions } from '@/hooks/use-predictions';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -35,7 +36,7 @@ export default function BotPage() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://0.0.0.0:3001/wallboard/events');
+    const eventSource = new EventSource(`${API_BASE_URL}/wallboard/events`);
 
     eventSource.onopen = () => {
       setConnectionStatus('connected');
