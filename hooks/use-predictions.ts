@@ -10,7 +10,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
 
   const fetchPrediction = useCallback(async (campaignName: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/predictions/campaigns/${encodeURIComponent(campaignName)}`);
+      const response = await fetch(`http://0.0.0.0:3001/predictions/campaigns/${encodeURIComponent(campaignName)}`);
       if (!response.ok) {
         throw new Error(`Prediction fetch failed with status: ${response.status}`);
       }
