@@ -18,6 +18,7 @@ export interface WallboardData {
   przerwa?: number;
   niedostepni?: number;
   rozmawiaja?: number;
+  nieobsluzone?: number;
   
   // Campaign table data
   campaigns?: CampaignData[];
