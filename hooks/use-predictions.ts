@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CampaignPrediction } from '@/types/predictions';
 import { CampaignData } from '@/types/wallboard';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
   const [predictions, setPredictions] = useState<Map<string, CampaignPrediction>>(new Map());

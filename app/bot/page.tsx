@@ -8,8 +8,9 @@ import { MetricCards } from '@/components/bot/MetricCards';
 import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
 import { usePredictions } from '@/hooks/use-predictions';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/lib/api-config';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -19,7 +20,7 @@ export default function BotPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
-  const [showPredictions, setShowPredictions] = useState(true);
+  const [showPredictions, setShowPredictions] = useLocalStorage('showPredictions', true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
