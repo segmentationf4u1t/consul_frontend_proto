@@ -7,6 +7,7 @@ import { Header } from '@/components/bot/Header';
 import { MetricCards } from '@/components/bot/MetricCards';
 import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
+import { usePredictions } from '@/hooks/use-predictions';
 
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
@@ -22,6 +23,7 @@ export default function BotPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const stallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  const { predictions, isLoading: predictionsLoading } = usePredictions(energaData?.campaigns);
 
   const resetStallTimer = useCallback(() => {
     if (stallTimeoutRef.current) {
@@ -33,7 +35,7 @@ export default function BotPage() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource('http://192.168.1.33:3001/wallboard/events');
+    const eventSource = new EventSource('http://localhost:3001/wallboard/events');
 
     eventSource.onopen = () => {
       setConnectionStatus('connected');
@@ -106,6 +108,8 @@ export default function BotPage() {
             setSorting={setSorting}
             isInitialLoading={isInitialLoading}
             error={error}
+            predictions={predictions}
+            predictionsLoading={predictionsLoading}
           />
         </section>
         

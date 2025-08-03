@@ -7,6 +7,7 @@ import { columns } from '@/components/tables/columns';
 import { SortingState } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CampaignPrediction } from '@/types/predictions';
 
 interface CampaignsTableProps {
   data: WallboardData | null;
@@ -14,6 +15,8 @@ interface CampaignsTableProps {
   setSorting: Dispatch<SetStateAction<SortingState>>;
   isInitialLoading: boolean;
   error: string | null;
+  predictions: Map<string, CampaignPrediction>;
+  predictionsLoading: boolean;
 }
 
 const CampaignsTableSkeleton = () => (
@@ -39,13 +42,17 @@ const CampaignsTableSkeleton = () => (
     </Card>
 );
 
-export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error }: CampaignsTableProps) => {
+export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading }: CampaignsTableProps) => {
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
   }
 
   if (data?.campaigns && data.campaigns.length > 0) {
-    return <DataTable columns={columns} data={data.campaigns} sorting={sorting} setSorting={setSorting} />;
+    const extendedData = data.campaigns.map(campaign => ({
+      ...campaign,
+      prediction: predictions.get(campaign.kampanie),
+    }));
+    return <DataTable columns={columns} data={extendedData} sorting={sorting} setSorting={setSorting} />;
   }
 
   if (error && !data) {

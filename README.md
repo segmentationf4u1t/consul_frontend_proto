@@ -5,6 +5,7 @@ A real-time dashboard built with Next.js and Shadcn/UI to visualize wallboard da
 ## Features
 
 - **Real-Time Data**: Connects to the backend's Server-Sent Events (SSE) endpoint to display live data without needing to refresh the page.
+- **Predictive Forecasting**: The campaigns table includes a "Prognoza" (Forecast) column that shows the predicted total calls for the day, with an animated progress bar to track real-time progress.
 - **Metric Cards**: Displays high-level panel data (Queue, Logged In, Ready, etc.) in animated cards that highlight when values change.
 - **Campaign Table**: Shows a detailed breakdown of all active campaigns in a clean, sortable table.
 - **Connection Status**: A clear indicator shows the current connection status to the backend (connected, reconnecting, or error).
