@@ -19,10 +19,13 @@ interface ExtendedCampaignData extends CampaignData {
 
 interface ColumnsOptions {
   showPredictions: boolean;
+  isMobile?: boolean;
+  isTablet?: boolean;
 }
 
-export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<ExtendedCampaignData>[] => {
-  const baseColumns: ColumnDef<ExtendedCampaignData>[] = [
+export const columns = ({ showPredictions, isMobile = false, isTablet = false }: ColumnsOptions): ColumnDef<ExtendedCampaignData>[] => {
+  // Define all possible columns
+  const allColumns: ColumnDef<ExtendedCampaignData>[] = [
     {
       accessorKey: "kampanie",
       header: ({ column }) => {
@@ -30,9 +33,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-auto p-2"
           >
-            Kampania
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <span className={isMobile ? "text-xs" : ""}>Kampania</span>
+            <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
           </Button>
         )
       },
@@ -44,7 +48,7 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         // Special styling for TOTAL row
         if (isTotal) {
           return (
-            <div className="flex items-center gap-2 font-bold text-primary bg-muted/50 px-2 py-1 rounded">
+            <div className={`flex items-center gap-2 font-bold text-primary bg-muted/50 px-2 py-1 rounded ${isMobile ? "text-xs" : ""}`}>
               {kampanie}
             </div>
           );
@@ -62,14 +66,14 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const showWarning = isTipCampaign && zalogowani === 1 && isWorkingHours;
 
         return (
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
             {zalogowani === 0 && <div className="h-4 w-1 rounded-full bg-red-500 animate-pulse-slow" />}
             
             {showWarning && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <AlertTriangle className="h-5 w-5 text-yellow-500 animate-pulse" />
+                    <AlertTriangle className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} text-yellow-500 animate-pulse`} />
                   </TooltipTrigger>
                   <TooltipContent className="bg-background border-primary">
                     <p className="font-bold">Uwaga na obsadę!</p>
@@ -79,10 +83,11 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
               </TooltipProvider>
             )}
 
-            {kampanie}
+            <span className="truncate">{kampanie}</span>
           </div>
         )
       },
+      size: isMobile ? 150 : 200,
     },
     {
       accessorKey: "zalogowani",
@@ -91,9 +96,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Zalogowani
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Zalogowani</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -102,11 +108,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`flex items-center gap-2 ${isTotal ? 'font-bold' : ''}`}>
+          <div className={`flex items-center gap-2 ${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {zalogowani}
           </div>
         )
       },
+      size: isMobile ? 80 : 100,
     },
     {
       accessorKey: "gotowi",
@@ -115,9 +122,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Gotowi
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Gotowi</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -126,11 +134,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {gotowi}
           </div>
         )
       },
+      size: isMobile ? 80 : 100,
     },
     {
       accessorKey: "kolejka",
@@ -139,9 +148,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Kolejka
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Kolejka</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -150,11 +160,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {kolejka}
           </div>
         )
       },
+      size: isMobile ? 80 : 100,
     },
     {
       accessorKey: "odebrane",
@@ -163,9 +174,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Odebrane
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Odebrane</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -174,11 +186,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {odebrane}
           </div>
         )
       },
+      size: isMobile ? 80 : 100,
     },
     {
       accessorKey: "odebranePercent",
@@ -187,9 +200,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Odebrane %
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Odebrane %</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -199,11 +213,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const variant = amount > 80 ? "default" : amount > 60 ? "secondary" : "destructive"
   
         if (isTotal) {
-          return <Badge variant="outline" className="font-bold">{`${amount}%`}</Badge>
+          return <Badge variant="outline" className={`font-bold ${isMobile ? 'text-xs px-1' : ''}`}>{`${amount}%`}</Badge>
         }
         
-        return <Badge variant={variant}>{`${amount}%`}</Badge>
-      }
+        return <Badge variant={variant} className={isMobile ? 'text-xs px-1' : ''}>{`${amount}%`}</Badge>
+      },
+      size: isMobile ? 90 : 120,
     },
     {
       accessorKey: "czasOczekiwania",
@@ -212,9 +227,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Czas oczekiwania
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Czas oczekiwania</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -223,11 +239,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {czasOczekiwania}
           </div>
         )
       },
+      size: isMobile ? 90 : 140,
     },
     {
       accessorKey: "srednyCzasRozmowy",
@@ -236,9 +253,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Średni czas rozmów  
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Średni czas rozmów</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -247,11 +265,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {srednyCzasRozmowy}
           </div>
         )
       },
+      size: isMobile ? 100 : 150,
     },
     {
       accessorKey: "polaczenia",
@@ -260,9 +279,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Button
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-2"
             >
-              Połączenia
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <span className={isMobile ? "text-xs" : ""}>Połączenia</span>
+              <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
         },
@@ -271,24 +291,27 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''}`}>
+          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
             {polaczenia}
           </div>
         )
       },
+      size: isMobile ? 80 : 100,
     },
   ];
 
+  // Add prediction column if enabled
   if (showPredictions) {
-    baseColumns.splice(5, 0, {
+    const predictionColumn: ColumnDef<ExtendedCampaignData> = {
       accessorKey: "prediction",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-2"
         >
-          Prognoza
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <span className={isMobile ? "text-xs" : ""}>Prognoza</span>
+          <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
         </Button>
       ),
       cell: ({ row }) => {
@@ -298,11 +321,11 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
 
         // For TOTAL row, don't show predictions
         if (isTotal) {
-          return <div className="text-center font-bold">-</div>;
+          return <div className={`text-center font-bold ${isMobile ? 'text-xs' : ''}`}>-</div>;
         }
 
         if (!prediction || prediction.predictedTotalCalls < 0) {
-          return <div className="text-center">-</div>;
+          return <div className={`text-center ${isMobile ? 'text-xs' : ''}`}>-</div>;
         }
         
         const progress = (polaczenia / prediction.predictedTotalCalls) * 100;
@@ -312,11 +335,11 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             <Tooltip>
               <TooltipTrigger className="w-full">
                   <div className="w-full px-1">
-                      <div className="flex justify-between text-sm mb-1">
+                      <div className={`flex justify-between mb-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                           <span>{polaczenia}</span>
                           <span className="font-bold">{prediction.predictedTotalCalls}</span>
                       </div>
-                      <Progress value={progress} className="w-full h-2" />
+                      <Progress value={progress} className={`w-full ${isMobile ? 'h-1' : 'h-2'}`} />
                   </div>
               </TooltipTrigger>
               <TooltipContent className="bg-background border-primary">
@@ -325,9 +348,38 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Tooltip>
           </TooltipProvider>
         );
-      }
-    });
+      },
+      size: isMobile ? 100 : 140,
+    };
+    allColumns.splice(5, 0, predictionColumn);
   }
 
-  return baseColumns;
+  // Filter columns based on screen size
+  if (isMobile) {
+    // For mobile, show only the most essential columns
+    const essentialColumns = [
+      "kampanie",
+      "zalogowani", 
+      "kolejka",
+      "odebranePercent",
+      "polaczenia"
+    ];
+    
+    if (showPredictions) {
+      essentialColumns.splice(4, 0, "prediction");
+    }
+    
+    return allColumns.filter(col => 
+      typeof col.accessorKey === 'string' && essentialColumns.includes(col.accessorKey)
+    );
+  } else if (isTablet) {
+    // For tablet, hide some less critical columns
+    const hiddenColumns = ["srednyCzasRozmowy"];
+    return allColumns.filter(col => 
+      !col.accessorKey || !hiddenColumns.includes(col.accessorKey as string)
+    );
+  }
+
+  // Desktop - show all columns
+  return allColumns;
 };

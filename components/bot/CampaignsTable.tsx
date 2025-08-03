@@ -8,6 +8,7 @@ import { SortingState } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CampaignPrediction } from '@/types/predictions';
+import { useScreenSize } from '@/hooks/use-mobile';
 
 interface CampaignsTableProps {
   data: WallboardData | null;
@@ -77,6 +78,8 @@ const secondsToTimeString = (seconds: number): string => {
 };
 
 export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
+  const { isMobile, isTablet } = useScreenSize();
+  
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
   }
@@ -126,8 +129,8 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Add total row at the end
     const dataWithTotal = [...extendedData, totalRow];
     
-    const tableColumns = columns({ showPredictions });
-    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} />;
+    const tableColumns = columns({ showPredictions, isMobile, isTablet });
+    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} showPredictions={showPredictions} />;
   }
 
   if (error && !data) {
