@@ -369,15 +369,17 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
       essentialColumns.splice(4, 0, "prediction");
     }
     
-    return allColumns.filter(col => 
-      typeof col.accessorKey === 'string' && essentialColumns.includes(col.accessorKey)
-    );
+    return allColumns.filter(col => {
+      const accessorKey = (col as any).accessorKey;
+      return typeof accessorKey === 'string' && essentialColumns.includes(accessorKey);
+    });
   } else if (isTablet) {
     // For tablet, hide some less critical columns
     const hiddenColumns = ["srednyCzasRozmowy"];
-    return allColumns.filter(col => 
-      !col.accessorKey || !hiddenColumns.includes(col.accessorKey as string)
-    );
+    return allColumns.filter(col => {
+      const accessorKey = (col as any).accessorKey;
+      return !accessorKey || !hiddenColumns.includes(accessorKey);
+    });
   }
 
   // Desktop - show all columns
