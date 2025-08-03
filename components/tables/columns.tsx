@@ -39,6 +39,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
       cell: ({ row }) => {
         const kampanie = row.getValue("kampanie") as string;
         const zalogowani = row.getValue("zalogowani") as number;
+        const isTotal = row.original.isTotal;
+        
+        // Special styling for TOTAL row
+        if (isTotal) {
+          return (
+            <div className="flex items-center gap-2 font-bold text-primary bg-muted/50 px-2 py-1 rounded">
+              {kampanie}
+            </div>
+          );
+        }
         
         const now = new Date();
         const timeZone = 'Europe/Warsaw';
@@ -89,9 +99,10 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         },
       cell: ({ row }) => {
         const zalogowani = parseFloat(row.getValue("zalogowani"))
+        const isTotal = row.original.isTotal;
    
         return (
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isTotal ? 'font-bold' : ''}`}>
             {zalogowani}
           </div>
         )
@@ -110,6 +121,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const gotowi = row.getValue("gotowi") as number;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {gotowi}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "kolejka",
@@ -124,6 +145,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const kolejka = row.getValue("kolejka") as number;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {kolejka}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "odebrane",
@@ -138,6 +169,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const odebrane = row.getValue("odebrane") as number;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {odebrane}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "odebranePercent",
@@ -154,8 +195,13 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
         },
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("odebranePercent"))
+        const isTotal = row.original.isTotal;
         const variant = amount > 80 ? "default" : amount > 60 ? "secondary" : "destructive"
   
+        if (isTotal) {
+          return <Badge variant="outline" className="font-bold">{`${amount}%`}</Badge>
+        }
+        
         return <Badge variant={variant}>{`${amount}%`}</Badge>
       }
     },
@@ -172,6 +218,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const czasOczekiwania = row.getValue("czasOczekiwania") as string;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {czasOczekiwania}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "srednyCzasRozmowy",
@@ -181,11 +237,21 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
               variant="ghost"
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
-              Średni czas rozmów
+              Średni czas rozmów  
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const srednyCzasRozmowy = row.getValue("srednyCzasRozmowy") as string;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {srednyCzasRozmowy}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "polaczenia",
@@ -200,6 +266,16 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
             </Button>
           )
         },
+      cell: ({ row }) => {
+        const polaczenia = row.getValue("polaczenia") as number;
+        const isTotal = row.original.isTotal;
+   
+        return (
+          <div className={`${isTotal ? 'font-bold' : ''}`}>
+            {polaczenia}
+          </div>
+        )
+      },
     },
   ];
 
@@ -218,6 +294,12 @@ export const columns = ({ showPredictions }: ColumnsOptions): ColumnDef<Extended
       cell: ({ row }) => {
         const prediction = row.original.prediction;
         const polaczenia = row.original.polaczenia ?? 0;
+        const isTotal = row.original.isTotal;
+
+        // For TOTAL row, don't show predictions
+        if (isTotal) {
+          return <div className="text-center font-bold">-</div>;
+        }
 
         if (!prediction || prediction.predictedTotalCalls < 0) {
           return <div className="text-center">-</div>;

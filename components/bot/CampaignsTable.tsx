@@ -43,6 +43,39 @@ const CampaignsTableSkeleton = () => (
     </Card>
 );
 
+// Helper function to convert time string (HH:MM:SS or MM:SS) to seconds
+const timeStringToSeconds = (timeStr: string): number => {
+  if (!timeStr || timeStr === '0' || timeStr === '-') return 0;
+  
+  const parts = timeStr.split(':').map(p => parseInt(p, 10) || 0);
+  if (parts.length === 3) {
+    // HH:MM:SS format
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    // MM:SS format
+    return parts[0] * 60 + parts[1];
+  } else if (parts.length === 1) {
+    // Just seconds
+    return parts[0];
+  }
+  return 0;
+};
+
+// Helper function to convert seconds back to time string
+const secondsToTimeString = (seconds: number): string => {
+  if (seconds === 0) return '00:00';
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+};
+
 export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
@@ -53,8 +86,48 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
       ...campaign,
       prediction: predictions.get(campaign.kampanie),
     }));
+
+    // Calculate totals and averages
+    const totalOdebrane = extendedData.reduce((sum, campaign) => sum + (campaign.odebrane || 0), 0);
+    const totalPolaczenia = extendedData.reduce((sum, campaign) => sum + (campaign.polaczenia || 0), 0);
+    
+    // Calculate averages (excluding campaigns with 0 values for more accurate averages)
+    const campaignsWithOdebranePercent = extendedData.filter(c => c.odebranePercent > 0);
+    const campaignsWithCzasOczekiwania = extendedData.filter(c => timeStringToSeconds(c.czasOczekiwania) > 0);
+    const campaignsWithSrednyCzasRozmowy = extendedData.filter(c => timeStringToSeconds(c.srednyCzasRozmowy) > 0);
+    
+    const avgOdebranePercent = campaignsWithOdebranePercent.length > 0 
+      ? campaignsWithOdebranePercent.reduce((sum, c) => sum + c.odebranePercent, 0) / campaignsWithOdebranePercent.length 
+      : 0;
+    
+    const avgCzasOczekiwaniaSeconds = campaignsWithCzasOczekiwania.length > 0
+      ? campaignsWithCzasOczekiwania.reduce((sum, c) => sum + timeStringToSeconds(c.czasOczekiwania), 0) / campaignsWithCzasOczekiwania.length
+      : 0;
+    
+    const avgSrednyCzasRozmowySeconds = campaignsWithSrednyCzasRozmowy.length > 0
+      ? campaignsWithSrednyCzasRozmowy.reduce((sum, c) => sum + timeStringToSeconds(c.srednyCzasRozmowy), 0) / campaignsWithSrednyCzasRozmowy.length
+      : 0;
+
+    // Create TOTAL row - pure frontend summary without predictions
+    const totalRow = {
+      kampanie: 'TOTAL',
+      zalogowani: extendedData.reduce((sum, c) => sum + (c.zalogowani || 0), 0),
+      gotowi: extendedData.reduce((sum, c) => sum + (c.gotowi || 0), 0),
+      kolejka: extendedData.reduce((sum, c) => sum + (c.kolejka || 0), 0),
+      odebrane: totalOdebrane,
+      odebranePercent: Math.round(avgOdebranePercent * 100) / 100, // Round to 2 decimal places
+      czasOczekiwania: secondsToTimeString(Math.round(avgCzasOczekiwaniaSeconds)),
+      srednyCzasRozmowy: secondsToTimeString(Math.round(avgSrednyCzasRozmowySeconds)),
+      polaczenia: totalPolaczenia,
+      prediction: undefined, // No predictions for TOTAL row
+      isTotal: true, // Flag to identify this as the total row
+    };
+
+    // Add total row at the end
+    const dataWithTotal = [...extendedData, totalRow];
+    
     const tableColumns = columns({ showPredictions });
-    return <DataTable columns={tableColumns} data={extendedData} sorting={sorting} setSorting={setSorting} />;
+    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} />;
   }
 
   if (error && !data) {
