@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { CampaignPrediction } from '@/types/predictions';
 import { CampaignData } from '@/types/wallboard';
 
-console.log("API URL from env:", process.env.NEXT_PUBLIC_API_URL); // DEBUG
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
@@ -19,7 +18,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       }
       const data: CampaignPrediction = await response.json();
       setPredictions(prev => new Map(prev).set(campaignName, data));
-    } catch (error) => {
+    } catch (error) {
       console.error(`Failed to fetch prediction for ${campaignName}:`, error);
     }
   }, []);
