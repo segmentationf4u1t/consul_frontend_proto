@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Consul Wallboard Frontend
+
+A real-time dashboard built with Next.js and Shadcn/UI to visualize wallboard data from the [Consul Stack Wallboard API](https://github.com/segmentationf4u1t/consul_backend_proto).
+
+## Features
+
+- **Real-Time Data**: Connects to the backend's Server-Sent Events (SSE) endpoint to display live data without needing to refresh the page.
+- **Metric Cards**: Displays high-level panel data (Queue, Logged In, Ready, etc.) in animated cards that highlight when values change.
+- **Campaign Table**: Shows a detailed breakdown of all active campaigns in a clean, sortable table.
+- **Connection Status**: A clear indicator shows the current connection status to the backend (connected, reconnecting, or error).
+- **Graceful Error Handling**: If the backend is unavailable, the dashboard displays a clear error message without crashing.
+- **Responsive Design**: The layout is fully responsive and works on desktop and mobile devices.
+- **Theming**: Includes a light/dark mode toggle.
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **UI**: [Shadcn/UI](https://ui.shadcn.com/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [Bun](https://bun.sh/) (as the package manager/runtime)
+- A running instance of the [Consul Stack Wallboard API](https://github.com/segmentationf4u1t/consul_backend_proto) on `http://localhost:3000`.
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone git@github.com:segmentationf4u1t/consul_frontend_proto.git
+    cd consul_frontend_proto
+    ```
+
+2.  Install dependencies:
+    ```bash
+    bun install
+    ```
+
+### Running the Development Server
+
+To start the development server, run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The page will automatically connect to the backend API and start displaying data.
