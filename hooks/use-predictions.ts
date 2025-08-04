@@ -29,18 +29,53 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       return;
     }
 
+    let isMounted = true; // Prevent state updates if component unmounted
+
     const fetchAllPredictions = async () => {
+      if (!isMounted) return;
+      
       setIsLoading(true);
-      await Promise.all(campaigns.map(c => fetchPrediction(c.kampanie)));
-      setIsLoading(false);
+      
+      // Create campaign names array to avoid dependency on fetchPrediction
+      const campaignNames = campaigns.map(c => c.kampanie);
+      
+      try {
+        const promises = campaignNames.map(async (campaignName) => {
+          const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
+          if (!response.ok) {
+            throw new Error(`Prediction fetch failed with status: ${response.status}`);
+          }
+          const data: CampaignPrediction = await response.json();
+          return { campaignName, data };
+        });
+
+        const results = await Promise.all(promises);
+        
+        if (isMounted) {
+          const newPredictions = new Map<string, CampaignPrediction>();
+          results.forEach(({ campaignName, data }) => {
+            newPredictions.set(campaignName, data);
+          });
+          setPredictions(newPredictions);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch predictions:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     };
 
     fetchAllPredictions();
 
     const interval = setInterval(fetchAllPredictions, 60000); // Refresh every 60 seconds
 
-    return () => clearInterval(interval);
-  }, [campaigns, fetchPrediction]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [campaigns]); // Removed fetchPrediction from dependencies
 
   return { predictions, isLoading };
 };
