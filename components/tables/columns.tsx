@@ -226,24 +226,24 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const amount = parseFloat(row.getValue("odebranePercent"))
         const isTotal = row.original.isTotal;
         
-        // Color coding based on performance
-        const getColorClass = (percent: number) => {
-          if (percent >= 90) return "text-green-700 bg-green-50 border-green-200";
-          if (percent >= 80) return "text-blue-700 bg-blue-50 border-blue-200";
-          if (percent >= 60) return "text-yellow-700 bg-yellow-50 border-yellow-200";
-          return "text-red-700 bg-red-50 border-red-200";
+        // Color coding based on performance - plain text colors
+        const getTextColor = (percent: number) => {
+          if (percent >= 90) return "text-green-600";
+          if (percent >= 80) return "text-blue-600";
+          if (percent >= 60) return "text-yellow-600";
+          return "text-red-600";
         };
   
         if (isTotal) {
           return (
-            <div className={`inline-flex items-center px-2 py-1 rounded-md border font-bold text-gray-700 bg-gray-50 border-gray-200 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            <div className={`font-bold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {`${amount}%`}
             </div>
           );
         }
         
         return (
-          <div className={`inline-flex items-center px-2 py-1 rounded-md border font-medium ${getColorClass(amount)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+          <div className={`font-medium ${getTextColor(amount)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
             {`${amount}%`}
           </div>
         );
@@ -259,7 +259,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-2"
             >
-              <span className={isMobile ? "text-xs" : ""}>Czas oczekiwania</span>
+              <span className={isMobile ? "text-xs" : ""}>Czas oczek.</span>
               <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
@@ -285,7 +285,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-2"
             >
-              <span className={isMobile ? "text-xs" : ""}>Średni czas rozmów</span>
+              <span className={isMobile ? "text-xs" : ""}>Średni cz. rozm.</span>
               <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
             </Button>
           )
@@ -360,6 +360,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         
         const progress = (polaczenia / prediction.predictedTotalCalls) * 100;
         const progressClamped = Math.min(progress, 100);
+        const isValidProgress = !isNaN(progress) && isFinite(progress);
 
         return (
           <TooltipProvider>
@@ -374,22 +375,23 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
                     <div className="w-full bg-gray-200 rounded-full h-1.5">
                       <div 
                         className={`h-1.5 rounded-full transition-all duration-300 ${
+                          !isValidProgress ? 'bg-gray-400' :
                           progressClamped >= 90 ? 'bg-green-500' : 
                           progressClamped >= 70 ? 'bg-blue-500' : 
                           progressClamped >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                         }`}
-                        style={{ width: `${progressClamped}%` }}
+                        style={{ width: isValidProgress ? `${progressClamped}%` : '0%' }}
                       />
                     </div>
                   </div>
                   <div className={`text-right font-medium ${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground min-w-[35px]`}>
-                    {progress.toFixed(0)}%
+                    {isValidProgress ? `${progress.toFixed(0)}%` : '-'}
                   </div>
                 </div>
               </TooltipTrigger>
               <TooltipContent className="bg-background border-primary">
                 <p className="font-semibold">{`${polaczenia} / ${prediction.predictedTotalCalls}`}</p>
-                <p>{`Progres: ${progress.toFixed(1)}%`}</p>
+                <p>{`Progres: ${isValidProgress ? progress.toFixed(1) : 'N/A'}%`}</p>
                 <p className="text-xs text-muted-foreground">Model: {prediction.modelUsed}</p>
               </TooltipContent>
             </Tooltip>
