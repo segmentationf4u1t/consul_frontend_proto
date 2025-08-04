@@ -114,15 +114,15 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Create TOTAL row - pure frontend summary without predictions
     const totalRow = {
       kampanie: 'TOTAL',
-      zalogowani: extendedData.reduce((sum, c) => sum + (c.zalogowani || 0), 0),
-      gotowi: extendedData.reduce((sum, c) => sum + (c.gotowi || 0), 0),
-      kolejka: extendedData.reduce((sum, c) => sum + (c.kolejka || 0), 0),
+      zalogowani: null, // Empty for TOTAL row
+      gotowi: null, // Empty for TOTAL row
+      kolejka: null, // Empty for TOTAL row
       odebrane: totalOdebrane,
       odebranePercent: Math.round(avgOdebranePercent * 100) / 100, // Round to 2 decimal places
       czasOczekiwania: secondsToTimeString(Math.round(avgCzasOczekiwaniaSeconds)),
       srednyCzasRozmowy: secondsToTimeString(Math.round(avgSrednyCzasRozmowySeconds)),
       polaczenia: totalPolaczenia,
-      prediction: undefined, // No predictions for TOTAL row
+      prediction: null, // Empty for TOTAL row (no predictions)
       isTotal: true, // Flag to identify this as the total row
     };
 

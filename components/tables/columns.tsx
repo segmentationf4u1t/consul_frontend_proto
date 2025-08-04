@@ -104,12 +104,12 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
           )
         },
       cell: ({ row }) => {
-        const zalogowani = parseFloat(row.getValue("zalogowani"))
+        const zalogowani = row.getValue("zalogowani") as number;
         const isTotal = row.original.isTotal;
    
         return (
           <div className={`flex items-center gap-2 ${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
-            {zalogowani}
+            {zalogowani !== null ? zalogowani : ''}
           </div>
         )
       },
@@ -135,7 +135,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
    
         return (
           <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
-            {gotowi}
+            {gotowi !== null ? gotowi : ''}
           </div>
         )
       },
@@ -161,7 +161,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
    
         return (
           <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
-            {kolejka}
+            {kolejka !== null ? kolejka : ''}
           </div>
         )
       },
@@ -210,13 +210,28 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("odebranePercent"))
         const isTotal = row.original.isTotal;
-        const variant = amount > 80 ? "default" : amount > 60 ? "secondary" : "destructive"
+        
+        // Color coding based on performance
+        const getColorClass = (percent: number) => {
+          if (percent >= 90) return "text-green-700 bg-green-50 border-green-200";
+          if (percent >= 80) return "text-blue-700 bg-blue-50 border-blue-200";
+          if (percent >= 60) return "text-yellow-700 bg-yellow-50 border-yellow-200";
+          return "text-red-700 bg-red-50 border-red-200";
+        };
   
         if (isTotal) {
-          return <Badge variant="outline" className={`font-bold ${isMobile ? 'text-xs px-1' : ''}`}>{`${amount}%`}</Badge>
+          return (
+            <div className={`inline-flex items-center px-2 py-1 rounded-md border font-bold text-gray-700 bg-gray-50 border-gray-200 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              {`${amount}%`}
+            </div>
+          );
         }
         
-        return <Badge variant={variant} className={isMobile ? 'text-xs px-1' : ''}>{`${amount}%`}</Badge>
+        return (
+          <div className={`inline-flex items-center px-2 py-1 rounded-md border font-medium ${getColorClass(amount)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            {`${amount}%`}
+          </div>
+        );
       },
       size: isMobile ? 90 : 120,
     },
@@ -321,7 +336,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
 
         // For TOTAL row, don't show predictions
         if (isTotal) {
-          return <div className={`text-center font-bold ${isMobile ? 'text-xs' : ''}`}>-</div>;
+          return <div className={`text-center font-bold ${isMobile ? 'text-xs' : ''}`}></div>;
         }
 
         if (!prediction || prediction.predictedTotalCalls < 0) {
@@ -329,21 +344,38 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         }
         
         const progress = (polaczenia / prediction.predictedTotalCalls) * 100;
+        const progressClamped = Math.min(progress, 100);
 
         return (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger className="w-full">
-                  <div className="w-full px-1">
-                      <div className={`flex justify-between mb-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                          <span>{polaczenia}</span>
-                          <span className="font-bold">{prediction.predictedTotalCalls}</span>
-                      </div>
-                      <Progress value={progress} className={`w-full ${isMobile ? 'h-1' : 'h-2'}`} />
+                <div className="flex items-center gap-2 min-h-[36px]">
+                  <div className="flex flex-col flex-1 gap-1">
+                    <div className={`flex justify-between items-center ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      <span className="text-muted-foreground">{polaczenia}</span>
+                      <span className="font-semibold">{prediction.predictedTotalCalls}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div 
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          progressClamped >= 90 ? 'bg-green-500' : 
+                          progressClamped >= 70 ? 'bg-blue-500' : 
+                          progressClamped >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${progressClamped}%` }}
+                      />
+                    </div>
                   </div>
+                  <div className={`text-right font-medium ${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground min-w-[35px]`}>
+                    {progress.toFixed(0)}%
+                  </div>
+                </div>
               </TooltipTrigger>
               <TooltipContent className="bg-background border-primary">
+                <p className="font-semibold">{`${polaczenia} / ${prediction.predictedTotalCalls}`}</p>
                 <p>{`Progres: ${progress.toFixed(1)}%`}</p>
+                <p className="text-xs text-muted-foreground">Model: {prediction.modelUsed}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
