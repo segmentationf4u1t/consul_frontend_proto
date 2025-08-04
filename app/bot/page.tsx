@@ -7,6 +7,7 @@ import { Header } from '@/components/bot/Header';
 import { MetricCards } from '@/components/bot/MetricCards';
 import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
+import { SystemInfoCard } from '@/components/bot/SystemInfoCard';
 import { usePredictions } from '@/hooks/use-predictions';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
@@ -115,6 +116,10 @@ export default function BotPage() {
             predictionsLoading={predictionsLoading}
             showPredictions={showPredictions}
           />
+        </section>
+
+        <section>
+          <SystemInfoCard className="max-w-2xl mx-auto" />
         </section>
         
         <ConnectionStatusIndicator 
