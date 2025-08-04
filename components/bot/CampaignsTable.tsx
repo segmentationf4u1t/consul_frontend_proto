@@ -3,7 +3,7 @@
 import { memo, Dispatch, SetStateAction } from 'react';
 import { WallboardData } from '@/types/wallboard';
 import { DataTable } from '@/components/tables/data-table';
-import { columns } from '@/components/tables/columns';
+import { columns, TableRowData } from '@/components/tables/columns';
 import { SortingState } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -126,8 +126,8 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
       isTotal: true, // Flag to identify this as the total row
     };
 
-    // Add total row at the end
-    const dataWithTotal = [...extendedData, totalRow];
+    // Add total row at the end - cast to the expected table row type
+    const dataWithTotal = [...extendedData, totalRow] as TableRowData[];
     
     const tableColumns = columns({ showPredictions, isMobile, isTablet });
     return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} showPredictions={showPredictions} />;

@@ -14,7 +14,22 @@ import { AlertTriangle } from "lucide-react"
 import { toZonedTime } from "date-fns-tz"
 
 interface ExtendedCampaignData extends CampaignData {
-  prediction?: CampaignPrediction;
+  prediction?: CampaignPrediction | null;
+}
+
+// Type for table rows that can handle TOTAL row with nullable fields
+export interface TableRowData {
+  kampanie: string;
+  zalogowani: number | null;
+  gotowi: number | null;
+  kolejka: number | null;
+  odebrane: number;
+  odebranePercent: number;
+  czasOczekiwania: string;
+  srednyCzasRozmowy: string;
+  polaczenia: number;
+  prediction?: CampaignPrediction | null;
+  isTotal?: boolean;
 }
 
 interface ColumnsOptions {
@@ -23,9 +38,9 @@ interface ColumnsOptions {
   isTablet?: boolean;
 }
 
-export const columns = ({ showPredictions, isMobile = false, isTablet = false }: ColumnsOptions): ColumnDef<ExtendedCampaignData>[] => {
+export const columns = ({ showPredictions, isMobile = false, isTablet = false }: ColumnsOptions): ColumnDef<TableRowData>[] => {
   // Define all possible columns
-  const allColumns: ColumnDef<ExtendedCampaignData>[] = [
+  const allColumns: ColumnDef<TableRowData>[] = [
     {
       accessorKey: "kampanie",
       header: ({ column }) => {
@@ -104,7 +119,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
           )
         },
       cell: ({ row }) => {
-        const zalogowani = row.getValue("zalogowani") as number;
+        const zalogowani = row.getValue("zalogowani") as number | null;
         const isTotal = row.original.isTotal;
    
         return (
@@ -130,7 +145,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
           )
         },
       cell: ({ row }) => {
-        const gotowi = row.getValue("gotowi") as number;
+        const gotowi = row.getValue("gotowi") as number | null;
         const isTotal = row.original.isTotal;
    
         return (
@@ -156,7 +171,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
           )
         },
       cell: ({ row }) => {
-        const kolejka = row.getValue("kolejka") as number;
+        const kolejka = row.getValue("kolejka") as number | null;
         const isTotal = row.original.isTotal;
    
         return (
@@ -317,7 +332,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
 
   // Add prediction column if enabled
   if (showPredictions) {
-    const predictionColumn: ColumnDef<ExtendedCampaignData> = {
+    const predictionColumn: ColumnDef<TableRowData> = {
       accessorKey: "prediction",
       header: ({ column }) => (
         <Button
