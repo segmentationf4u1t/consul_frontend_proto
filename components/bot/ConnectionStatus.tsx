@@ -13,6 +13,8 @@ interface ConnectionStatusIndicatorProps {
   onAnimationsToggle: (enabled: boolean) => void;
   showPredictions: boolean;
   onShowPredictionsToggle: (enabled: boolean) => void;
+  showDebugInfo: boolean;
+  onShowDebugInfoToggle: (enabled: boolean) => void;
 }
 
 const statusDetails = {
@@ -38,7 +40,7 @@ const statusDetails = {
   },
 };
 
-export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animationsEnabled, onAnimationsToggle, showPredictions, onShowPredictionsToggle }: ConnectionStatusIndicatorProps) => {
+export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animationsEnabled, onAnimationsToggle, showPredictions, onShowPredictionsToggle, showDebugInfo, onShowDebugInfoToggle }: ConnectionStatusIndicatorProps) => {
   const details = statusDetails[status];
 
   return (
@@ -50,11 +52,15 @@ export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animations
         </div>
         <div className="flex items-center space-x-2">
             <Switch id="predictions-toggle-footer" checked={showPredictions} onCheckedChange={onShowPredictionsToggle} />
-            <Label htmlFor="predictions-toggle-footer">Pokaż prognozy</Label>
+            <Label htmlFor="predictions-toggle-footer">Prognozy</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+            <Switch id="debug-toggle-footer" checked={showDebugInfo} onCheckedChange={onShowDebugInfoToggle} />
+            <Label htmlFor="debug-toggle-footer">Debug</Label>
         </div>
         <div className="flex items-center space-x-2">
             <Switch id="animations-toggle-footer" checked={animationsEnabled} onCheckedChange={onAnimationsToggle} />
-            <Label htmlFor="animations-toggle-footer">Włącz animacje</Label>
+            <Label htmlFor="animations-toggle-footer">Animacje</Label>
         </div>
       </div>
     </div>

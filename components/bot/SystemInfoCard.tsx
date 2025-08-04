@@ -126,126 +126,117 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Informacje Systemowe
-            </CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1">
-              <Clock className="h-4 w-4" />
-              Ostatnia aktualizacja: {formatDate(systemInfo.lastUpdated)}
-            </CardDescription>
-          </div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Database className="h-4 w-4" />
+            Debug Info
+          </CardTitle>
           <Button
             onClick={handleRefresh}
             variant="outline"
             size="sm"
             disabled={isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             Odśwież
           </Button>
         </div>
+        <CardDescription className="text-xs">
+          Aktualizacja: {formatDate(systemInfo.lastUpdated)}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Database Information */}
-        <div>
-          <h4 className="font-semibold mb-3 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Baza Danych
-          </h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Całkowita liczba rekordów</p>
-              <p className="font-mono text-lg">{formatNumber(systemInfo.database.totalRecords.total)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Rozmiar pliku</p>
-              <p className="font-mono text-lg">{systemInfo.database.fileSizeMB} MB</p>
-            </div>
-          </div>
-          
-          <div className="mt-3 space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Panel logs:</span>
-              <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.panelLogs)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Campaign logs:</span>
-              <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.campaignLogs)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Prediction logs:</span>
-              <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.predictionLogs)}</span>
-            </div>
-          </div>
-
-          {systemInfo.database.oldestRecord && systemInfo.database.newestRecord && (
-            <div className="mt-3 pt-3 border-t text-xs">
+      <CardContent className="pt-0 space-y-3">
+        {/* Compact Database and Storage Info */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Database Section */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              Baza Danych
+            </h4>
+            <div className="space-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Najstarszy rekord:</span>
-                <span className="font-mono">{formatDate(systemInfo.database.oldestRecord)}</span>
+                <span className="text-muted-foreground">Rekordów:</span>
+                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Najnowszy rekord:</span>
-                <span className="font-mono">{formatDate(systemInfo.database.newestRecord)}</span>
+                <span className="text-muted-foreground">Rozmiar:</span>
+                <span className="font-mono">{systemInfo.database.fileSizeMB} MB</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Panel:</span>
+                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.panelLogs)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Kampanie:</span>
+                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.campaignLogs)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Prognozy:</span>
+                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.predictionLogs)}</span>
               </div>
             </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Storage Information */}
-        <div>
-          <h4 className="font-semibold mb-3 flex items-center gap-2">
-            <HardDrive className="h-4 w-4" />
-            Pamięć Masowa
-          </h4>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Wolne miejsce</p>
-              <p className="font-mono text-lg">{systemInfo.storage.freeDiskSpaceGB.toFixed(1)} GB</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Wykorzystanie</p>
-              <p className={`font-mono text-lg ${getStorageColor(systemInfo.storage.usedPercentage)}`}>
-                {systemInfo.storage.usedPercentage.toFixed(1)}%
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-3">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Całkowita przestrzeń:</span>
-              <span className="font-mono">{systemInfo.storage.totalDiskSpaceGB.toFixed(1)} GB</span>
-            </div>
-            
-            {/* Storage usage bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  systemInfo.storage.usedPercentage < 70 
-                    ? 'bg-green-500' 
-                    : systemInfo.storage.usedPercentage < 85 
-                    ? 'bg-yellow-500' 
-                    : 'bg-red-500'
-                }`}
-                style={{ width: `${systemInfo.storage.usedPercentage}%` }}
-              />
-            </div>
           </div>
 
-          {systemInfo.storage.usedPercentage > 85 && (
-            <div className="mt-2">
-              <Badge variant="destructive" className="text-xs">
-                Ostrzeżenie: Mało miejsca na dysku
-              </Badge>
+          {/* Storage Section */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm flex items-center gap-1">
+              <HardDrive className="h-3 w-3" />
+              Dysk
+            </h4>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Wolne:</span>
+                <span className="font-mono">{systemInfo.storage.freeDiskSpaceGB.toFixed(1)} GB</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Całkowite:</span>
+                <span className="font-mono">{systemInfo.storage.totalDiskSpaceGB.toFixed(1)} GB</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Użycie:</span>
+                <span className={`font-mono ${getStorageColor(systemInfo.storage.usedPercentage)}`}>
+                  {systemInfo.storage.usedPercentage.toFixed(1)}%
+                </span>
+              </div>
+              
+              {/* Compact storage bar */}
+              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    systemInfo.storage.usedPercentage < 70 
+                      ? 'bg-green-500' 
+                      : systemInfo.storage.usedPercentage < 85 
+                      ? 'bg-yellow-500' 
+                      : 'bg-red-500'
+                  }`}
+                  style={{ width: `${systemInfo.storage.usedPercentage}%` }}
+                />
+              </div>
+
+              {systemInfo.storage.usedPercentage > 85 && (
+                <Badge variant="destructive" className="text-xs mt-1">
+                  Mało miejsca
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Data age range - compact */}
+        {systemInfo.database.oldestRecord && systemInfo.database.newestRecord && (
+          <div className="pt-2 border-t text-xs space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Od:</span>
+              <span className="font-mono">{formatDate(systemInfo.database.oldestRecord)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Do:</span>
+              <span className="font-mono">{formatDate(systemInfo.database.newestRecord)}</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

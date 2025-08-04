@@ -22,6 +22,7 @@ export default function BotPage() {
   const [error, setError] = useState<string | null>(null);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [showPredictions, setShowPredictions] = useLocalStorage('showPredictions', true);
+  const [showDebugInfo, setShowDebugInfo] = useLocalStorage('showDebugInfo', false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
@@ -118,9 +119,11 @@ export default function BotPage() {
           />
         </section>
 
-        <section>
-          <SystemInfoCard className="max-w-2xl mx-auto" />
-        </section>
+        {showDebugInfo && (
+          <section>
+            <SystemInfoCard />
+          </section>
+        )}
         
         <ConnectionStatusIndicator 
             status={connectionStatus} 
@@ -129,6 +132,8 @@ export default function BotPage() {
             onAnimationsToggle={setAnimationsEnabled}
             showPredictions={showPredictions}
             onShowPredictionsToggle={setShowPredictions}
+            showDebugInfo={showDebugInfo}
+            onShowDebugInfoToggle={setShowDebugInfo}
         />
       </div>
     </div>
