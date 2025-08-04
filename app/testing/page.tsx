@@ -8,11 +8,11 @@ import { MetricCards } from '@/components/bot/MetricCards';
 import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
 import { SystemInfoCard } from '@/components/bot/SystemInfoCard';
-import { ProphetIndicator } from '@/components/bot/ProphetIndicator';
 import { usePredictions } from '@/hooks/use-predictions';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { API_BASE_URL } from '@/lib/api-config';
+import { AnimatedMazeBackground } from '@/components/ui/animated-maze-background';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -107,7 +107,7 @@ export default function BotPage() {
         </section>
         */}
 
-        <section className="space-y-4">
+        <section>
           <CampaignsTable
             data={energaData}
             sorting={sorting}
@@ -118,14 +118,6 @@ export default function BotPage() {
             predictionsLoading={predictionsLoading}
             showPredictions={showPredictions}
           />
-          
-          {showPredictions && (
-            <div className="flex">
-              <div className="w-80">
-                <ProphetIndicator />
-              </div>
-            </div>
-          )}
         </section>
 
         {showDebugInfo && (
@@ -133,7 +125,7 @@ export default function BotPage() {
             <SystemInfoCard />
           </section>
         )}
-        
+       
         <ConnectionStatusIndicator 
             status={connectionStatus} 
             lastRefresh={lastRefresh} 
