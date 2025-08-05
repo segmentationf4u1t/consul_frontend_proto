@@ -8,7 +8,6 @@ export interface CampaignData {
   czasOczekiwania: string;
   srednyCzasRozmowy: string;
   polaczenia: number;
-  isTotal?: boolean; // Flag to identify the TOTAL row
 }
 
 export interface WallboardData {

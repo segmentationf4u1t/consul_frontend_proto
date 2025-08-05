@@ -116,40 +116,46 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 @layer utilities {
+
   /* Custom shine beam animation */
   @keyframes shine {
     0% {
       transform: translateX(-100%) skewX(-15deg);
       opacity: 0;
     }
+
     50% {
       opacity: 1;
     }
+
     100% {
       transform: translateX(200%) skewX(-15deg);
       opacity: 0;
     }
   }
-  
+
   /* Gradient border animation */
   @keyframes gradient-shift {
     0% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
+
     100% {
       background-position: 0% 50%;
     }
   }
-  
+
   .animate-shine {
     animation: shine 1.5s ease-in-out;
   }

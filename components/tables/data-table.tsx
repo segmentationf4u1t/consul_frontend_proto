@@ -67,8 +67,8 @@ export function DataTable<TData, TValue>({
   // For very small screens, show card view
   if (isVerySmall) {
     return (
-      <div>
-        <div className="flex items-center py-4">
+      <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+        <div className="flex items-center p-4 border-b border-border">
           <Input
             placeholder="Filtruj kampanie..."
             value={(table.getColumn("kampanie")?.getFilterValue() as string) ?? ""}
@@ -78,7 +78,7 @@ export function DataTable<TData, TValue>({
             className="max-w-sm"
           />
         </div>
-        <div className="grid gap-3">
+        <div className="grid gap-3 p-4">
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <CampaignCard
@@ -93,15 +93,14 @@ export function DataTable<TData, TValue>({
             </div>
           )}
         </div>
-       
       </div>
     );
   }
 
   // Default table view for larger screens
   return (
-    <div>
-      <div className="flex items-center py-4">
+    <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
+      <div className="flex items-center p-4 border-b border-border">
         <Input
           placeholder="Filtruj kampanie..."
           value={(table.getColumn("kampanie")?.getFilterValue() as string) ?? ""}
@@ -111,15 +110,15 @@ export function DataTable<TData, TValue>({
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border">
+      <div className="relative">
         <ScrollArea className="w-full whitespace-nowrap">
-          <Table className="min-w-full">
+          <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="min-w-[120px]">
+                      <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -138,9 +137,10 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className={row.original?.isTotal ? "bg-muted/30 font-medium" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="p-4 min-w-[120px]">
+                      <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -148,7 +148,7 @@ export function DataTable<TData, TValue>({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                     Brak wyników.
                   </TableCell>
                 </TableRow>
@@ -158,7 +158,6 @@ export function DataTable<TData, TValue>({
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
-      
     </div>
   )
 }

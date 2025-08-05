@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { RefreshCw, Database, HardDrive, Clock, FileText } from 'lucide-react';
+import { RefreshCw, Activity, Cpu, MemoryStick, HardDrive, Database } from 'lucide-react';
 import { SystemInfo } from '@/types/system';
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -60,18 +58,21 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pl-PL');
-  };
-
   const formatNumber = (num: number) => {
-    return num.toLocaleString('pl-PL');
+    if (num > 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num > 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
   };
 
-  const getStorageColor = (percentage: number) => {
-    if (percentage < 70) return 'text-green-600';
-    if (percentage < 85) return 'text-yellow-600';
-    return 'text-red-600';
+  const getStatusColor = (percentage: number) => {
+    if (percentage < 70) return 'text-green-600 dark:text-green-400';
+    if (percentage < 90) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const getProgressBar = (percentage: number) => {
+    const color = percentage < 70 ? 'bg-green-500' : percentage < 90 ? 'bg-yellow-500' : 'bg-red-500';
+    return { width: `${Math.min(percentage, 100)}%`, className: color };
   };
 
   useEffect(() => {
@@ -85,15 +86,10 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
   if (isLoading) {
     return (
       <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Informacje Systemowe
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Ładowanie...</span>
           </div>
         </CardContent>
       </Card>
@@ -103,20 +99,11 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
   if (error || !systemInfo) {
     return (
       <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Informacje Systemowe
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-muted-foreground mb-4">
-              {error || 'Brak danych systemowych'}
-            </p>
-            <Button onClick={fetchSystemInfo} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Spróbuj ponownie
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-destructive">Błąd systemu</span>
+            <Button onClick={fetchSystemInfo} variant="ghost" size="sm" className="h-6 px-2">
+              <RefreshCw className="h-3 w-3" />
             </Button>
           </div>
         </CardContent>
@@ -126,117 +113,141 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Database className="h-4 w-4" />
-            Debug Info
-          </CardTitle>
+      <CardContent className="p-4">
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <Activity className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">System Monitor</h3>
+              <p className="text-xs text-muted-foreground">
+                {new Date(systemInfo.lastUpdated).toLocaleTimeString('pl-PL')}
+              </p>
+            </div>
+          </div>
           <Button
             onClick={handleRefresh}
             variant="outline"
             size="sm"
             disabled={isRefreshing}
+            className="h-8 w-8 p-0"
           >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Odśwież
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <CardDescription className="text-xs">
-          Aktualizacja: {formatDate(systemInfo.lastUpdated)}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-3">
-        {/* Compact Database and Storage Info */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Database Section */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              Baza Danych
-            </h4>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Rekordów:</span>
-                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.total)}</span>
+
+        {/* Main Metrics Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* CPU Card */}
+          {systemInfo.system && (
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Cpu className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">CPU</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Rozmiar:</span>
-                <span className="font-mono">{systemInfo.database.fileSizeMB} MB</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Panel:</span>
-                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.panelLogs)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Kampanie:</span>
-                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.campaignLogs)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Prognozy:</span>
-                <span className="font-mono">{formatNumber(systemInfo.database.totalRecords.predictionLogs)}</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Użycie</span>
+                  <span className={`text-sm font-bold ${getStatusColor(systemInfo.system.cpu.usage)}`}>
+                    {systemInfo.system.cpu.usage.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${getProgressBar(systemInfo.system.cpu.usage).className}`}
+                    style={{ width: getProgressBar(systemInfo.system.cpu.usage).width }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {systemInfo.system.cpu.cores} cores • Load: {systemInfo.system.cpu.loadAverage.oneMinute}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Storage Section */}
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm flex items-center gap-1">
-              <HardDrive className="h-3 w-3" />
-              Dysk
-            </h4>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Wolne:</span>
-                <span className="font-mono">{systemInfo.storage.freeDiskSpaceGB.toFixed(1)} GB</span>
+          {/* Memory Card */}
+          {systemInfo.system && (
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <MemoryStick className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">RAM</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Całkowite:</span>
-                <span className="font-mono">{systemInfo.storage.totalDiskSpaceGB.toFixed(1)} GB</span>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Użycie</span>
+                  <span className={`text-sm font-bold ${getStatusColor(systemInfo.system.memory.usagePercentage)}`}>
+                    {systemInfo.system.memory.usagePercentage.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5">
+                  <div
+                    className={`h-1.5 rounded-full transition-all duration-300 ${getProgressBar(systemInfo.system.memory.usagePercentage).className}`}
+                    style={{ width: getProgressBar(systemInfo.system.memory.usagePercentage).width }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {systemInfo.system.memory.usedGB.toFixed(1)}GB / {systemInfo.system.memory.totalGB.toFixed(1)}GB
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Użycie:</span>
-                <span className={`font-mono ${getStorageColor(systemInfo.storage.usedPercentage)}`}>
+            </div>
+          )}
+        </div>
+
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Storage */}
+          <div className="bg-muted/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <HardDrive className="h-4 w-4 text-orange-600" />
+              <span className="text-sm font-medium">Dysk</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Zajęte</span>
+                <span className={`text-sm font-bold ${getStatusColor(systemInfo.storage.usedPercentage)}`}>
                   {systemInfo.storage.usedPercentage.toFixed(1)}%
                 </span>
               </div>
-              
-              {/* Compact storage bar */}
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+              <div className="w-full bg-muted rounded-full h-1.5">
                 <div
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    systemInfo.storage.usedPercentage < 70 
-                      ? 'bg-green-500' 
-                      : systemInfo.storage.usedPercentage < 85 
-                      ? 'bg-yellow-500' 
-                      : 'bg-red-500'
-                  }`}
-                  style={{ width: `${systemInfo.storage.usedPercentage}%` }}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${getProgressBar(systemInfo.storage.usedPercentage).className}`}
+                  style={{ width: getProgressBar(systemInfo.storage.usedPercentage).width }}
                 />
               </div>
+              <div className="text-xs text-muted-foreground">
+                {(systemInfo.storage.totalDiskSpaceGB - systemInfo.storage.freeDiskSpaceGB).toFixed(1)}GB / {systemInfo.storage.totalDiskSpaceGB.toFixed(1)}GB
+              </div>
+            </div>
+          </div>
 
-              {systemInfo.storage.usedPercentage > 85 && (
-                <Badge variant="destructive" className="text-xs mt-1">
-                  Mało miejsca
-                </Badge>
-              )}
+          {/* Database */}
+          <div className="bg-muted/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Database className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium">Baza</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Rekordów</span>
+                <span className="text-sm font-bold">
+                  {formatNumber(systemInfo.database.totalRecords.total)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Rozmiar</span>
+                <span className="text-sm font-bold">
+                  {systemInfo.database.fileSizeMB}MB
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Panel: {formatNumber(systemInfo.database.totalRecords.panelLogs)} • 
+                Kampanie: {formatNumber(systemInfo.database.totalRecords.campaignLogs)}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Data age range - compact */}
-        {systemInfo.database.oldestRecord && systemInfo.database.newestRecord && (
-          <div className="pt-2 border-t text-xs space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Od:</span>
-              <span className="font-mono">{formatDate(systemInfo.database.oldestRecord)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Do:</span>
-              <span className="font-mono">{formatDate(systemInfo.database.newestRecord)}</span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

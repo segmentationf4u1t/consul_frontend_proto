@@ -16,4 +16,22 @@ export interface SystemInfo {
     totalDiskSpaceGB: number;
     usedPercentage: number;
   };
+  system: {
+    cpu: {
+      cores: number;
+      model: string;
+      usage: number; // Average CPU usage percentage
+      loadAverage: {
+        oneMinute: number;
+        fiveMinutes: number;
+        fifteenMinutes: number;
+      };
+    };
+    memory: {
+      totalGB: number;
+      freeGB: number;
+      usedGB: number;
+      usagePercentage: number;
+    };
+  };
 }

@@ -143,7 +143,7 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
   return (
     <Card>
       <CardContent className="p-12 text-center">
-        <p className="font-semibold">Brak danych o kampanii</p>
+        <p className="font-semibold text-muted-foreground">Brak danych o kampanii</p>
       </CardContent>
     </Card>
   );

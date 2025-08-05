@@ -73,8 +73,8 @@ const MetricCard = memo(({ label, value, animationsEnabled, indicator }: MetricC
           <div className="w-full h-full bg-card rounded-xl"></div>
         </div>
         
-        <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg bg-card/50 backdrop-blur-sm h-20 w-full border-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg bg-card backdrop-blur-sm h-20 w-full border-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           
           <div 
             onAnimationEnd={handleAnimationEnd}
@@ -82,16 +82,16 @@ const MetricCard = memo(({ label, value, animationsEnabled, indicator }: MetricC
               animation.active ? 'animate-shine' : ''
             }`}
             style={{
-              background: 'linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.7) 50%, transparent 75%)',
+              background: 'linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.9) 50%, transparent 75%)',
             }}
           />
           
           <div 
             className={`absolute inset-0 z-5 rounded-xl pointer-events-none transition-all duration-500 ${
-              animation.active ? 'opacity-30' : 'opacity-0'
+              animation.active ? 'opacity-50' : 'opacity-0'
             }`}
             style={{
-              background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.3), transparent 70%)',
+              background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.5), transparent 70%)',
               transform: animation.active ? 'scale(1.05)' : 'scale(1)',
             }}
           />

@@ -48,7 +48,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-2"
+            className="h-auto p-2 hover:bg-muted/50"
           >
             <span className={isMobile ? "text-xs" : ""}>Kampania</span>
             <ArrowUpDown className={`ml-2 ${isMobile ? "h-3 w-3" : "h-4 w-4"}`} />
@@ -63,7 +63,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         // Special styling for TOTAL row
         if (isTotal) {
           return (
-            <div className={`flex items-center gap-2 font-bold text-primary bg-muted/50 px-2 py-1 rounded ${isMobile ? "text-xs" : ""}`}>
+            <div className={`flex items-center gap-2 font-bold text-foreground ${isMobile ? "text-xs" : ""}`}>
               {kampanie}
             </div>
           );
@@ -82,15 +82,15 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
 
         return (
           <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
-            {zalogowani === 0 && <div className="h-4 w-1 rounded-full bg-red-500 animate-pulse-slow" />}
+            {zalogowani === 0 && <div className="h-4 w-1 rounded-full bg-destructive animate-pulse" />}
             
             {showWarning && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <AlertTriangle className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} text-yellow-500 animate-pulse`} />
+                    <AlertTriangle className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} text-yellow-600 animate-pulse`} />
                   </TooltipTrigger>
-                  <TooltipContent className="bg-background border-primary">
+                  <TooltipContent>
                     <p className="font-bold">Uwaga na obsadę!</p>
                     <p>Jedyna osoba na kampanii TIP_Ogolna_PL jest aktywna jedynie na Mailach.</p>
                   </TooltipContent>
@@ -123,7 +123,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`flex items-center gap-2 ${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`flex items-center gap-2 ${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {zalogowani !== null ? zalogowani : ''}
           </div>
         )
@@ -149,7 +149,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {gotowi !== null ? gotowi : ''}
           </div>
         )
@@ -175,7 +175,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {kolejka !== null ? kolejka : ''}
           </div>
         )
@@ -201,7 +201,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {odebrane}
           </div>
         )
@@ -226,17 +226,17 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const amount = parseFloat(row.getValue("odebranePercent"))
         const isTotal = row.original.isTotal;
         
-        // Color coding based on performance - plain text colors
+        // Color coding based on performance - using shadcn theme colors
         const getTextColor = (percent: number) => {
-          if (percent >= 90) return "text-green-600";
-          if (percent >= 80) return "text-blue-600";
-          if (percent >= 60) return "text-yellow-600";
-          return "text-red-600";
+          if (percent >= 90) return "text-green-600 dark:text-green-400";
+          if (percent >= 80) return "text-blue-600 dark:text-blue-400";
+          if (percent >= 60) return "text-yellow-600 dark:text-yellow-400";
+          return "text-destructive";
         };
   
         if (isTotal) {
           return (
-            <div className={`font-bold text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            <div className={`font-bold text-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
               {`${amount}%`}
             </div>
           );
@@ -269,7 +269,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {czasOczekiwania}
           </div>
         )
@@ -295,7 +295,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {srednyCzasRozmowy}
           </div>
         )
@@ -321,7 +321,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTotal = row.original.isTotal;
    
         return (
-          <div className={`${isTotal ? 'font-bold' : ''} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {polaczenia}
           </div>
         )
@@ -351,11 +351,11 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
 
         // For TOTAL row, don't show predictions
         if (isTotal) {
-          return <div className={`text-center font-bold ${isMobile ? 'text-xs' : ''}`}></div>;
+          return <div className={`text-center font-bold text-foreground ${isMobile ? 'text-xs' : ''}`}></div>;
         }
 
         if (!prediction || prediction.predictedTotalCalls < 0) {
-          return <div className={`text-center ${isMobile ? 'text-xs' : ''}`}>-</div>;
+          return <div className={`text-center text-muted-foreground ${isMobile ? 'text-xs' : ''}`}>-</div>;
         }
         
         const progress = (polaczenia / prediction.predictedTotalCalls) * 100;
@@ -372,13 +372,13 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
                       <span className="text-muted-foreground">{polaczenia}</span>
                       <span className="font-semibold">{prediction.predictedTotalCalls}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className="w-full bg-secondary rounded-full h-1.5">
                       <div 
                         className={`h-1.5 rounded-full transition-all duration-300 ${
-                          !isValidProgress ? 'bg-gray-400' :
+                          !isValidProgress ? 'bg-muted-foreground' :
                           progressClamped >= 90 ? 'bg-green-500' : 
                           progressClamped >= 70 ? 'bg-blue-500' : 
-                          progressClamped >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                          progressClamped >= 50 ? 'bg-yellow-500' : 'bg-destructive'
                         }`}
                         style={{ width: isValidProgress ? `${progressClamped}%` : '0%' }}
                       />
@@ -389,7 +389,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
                   </div>
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="bg-background border-primary">
+              <TooltipContent>
                 <p className="font-semibold">{`${polaczenia} / ${prediction.predictedTotalCalls}`}</p>
                 <p>{`Progres: ${isValidProgress ? progress.toFixed(1) : 'N/A'}%`}</p>
                 <p className="text-xs text-muted-foreground">Model: {prediction.modelUsed}</p>
