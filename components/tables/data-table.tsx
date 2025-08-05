@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useIsMobile, useIsVerySmall } from "@/hooks/use-mobile"
 import { CampaignCard } from "@/components/bot/CampaignCard"
+import { TableRowData } from "@/components/tables/columns"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -137,7 +138,7 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={row.original?.isTotal ? "bg-muted/30 font-medium" : ""}
+                    className={(row.original as TableRowData)?.isTotal ? "bg-muted/30 font-medium" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
