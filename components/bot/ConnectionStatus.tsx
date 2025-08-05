@@ -50,10 +50,12 @@ export const ConnectionStatusIndicator = memo(({ status, lastRefresh, animations
             <div className={`h-2 w-2 rounded-full ${details.color} ${details.animation}`} />
             {details.text(lastRefresh)}
         </div>
+        {/* TEMPORARILY DISABLED - Predictions toggle
         <div className="flex items-center space-x-2">
             <Switch id="predictions-toggle-footer" checked={showPredictions} onCheckedChange={onShowPredictionsToggle} />
             <Label htmlFor="predictions-toggle-footer">Prognozy</Label>
         </div>
+        */}
         <div className="flex items-center space-x-2">
             <Switch id="debug-toggle-footer" checked={showDebugInfo} onCheckedChange={onShowDebugInfoToggle} />
             <Label htmlFor="debug-toggle-footer">Debug</Label>

@@ -7,9 +7,11 @@ import { CampaignData } from '@/types/wallboard';
 import { API_BASE_URL } from '@/lib/api-config';
 
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
-  const [predictions, setPredictions] = useState<Map<string, CampaignPrediction>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
+  // TEMPORARILY DISABLED - Return empty state without API calls
+  const [predictions] = useState<Map<string, CampaignPrediction>>(new Map());
+  const [isLoading] = useState(false);
 
+  /* TEMPORARILY DISABLED - All prediction fetching functionality
   const fetchPrediction = useCallback(async (campaignName: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
@@ -76,6 +78,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       clearInterval(interval);
     };
   }, [campaigns]); // Removed fetchPrediction from dependencies
+  */
 
   return { predictions, isLoading };
 };

@@ -8,8 +8,8 @@ import { MetricCards } from '@/components/bot/MetricCards';
 import { CampaignsTable } from '@/components/bot/CampaignsTable';
 import { ConnectionStatusIndicator } from '@/components/bot/ConnectionStatus';
 import { SystemInfoCard } from '@/components/bot/SystemInfoCard';
-import { ProphetIndicator } from '@/components/bot/ProphetIndicator';
-import { usePredictions } from '@/hooks/use-predictions';
+// import { ProphetIndicator } from '@/components/bot/ProphetIndicator'; // TEMPORARILY DISABLED
+// import { usePredictions } from '@/hooks/use-predictions'; // TEMPORARILY DISABLED
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { API_BASE_URL } from '@/lib/api-config';
@@ -22,14 +22,16 @@ export default function BotPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
-  const [showPredictions, setShowPredictions] = useLocalStorage('showPredictions', true);
+  const [showPredictions] = useState(false); // TEMPORARILY DISABLED - was: useLocalStorage('showPredictions', true);
   const [showDebugInfo, setShowDebugInfo] = useLocalStorage('showDebugInfo', false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const stallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { predictions, isLoading: predictionsLoading } = usePredictions(energaData?.campaigns);
+  // const { predictions, isLoading: predictionsLoading } = usePredictions(energaData?.campaigns); // TEMPORARILY DISABLED
+  const predictions = new Map(); // TEMPORARILY DISABLED - empty predictions
+  const predictionsLoading = false; // TEMPORARILY DISABLED
 
   const resetStallTimer = useCallback(() => {
     if (stallTimeoutRef.current) {
@@ -119,6 +121,7 @@ export default function BotPage() {
             showPredictions={showPredictions}
           />
           
+          {/* TEMPORARILY DISABLED - Predictions functionality
           {showPredictions && (
             <div className="flex">
               <div className="w-80">
@@ -126,6 +129,7 @@ export default function BotPage() {
               </div>
             </div>
           )}
+          */}
         </section>
 
         {showDebugInfo && (
@@ -140,7 +144,7 @@ export default function BotPage() {
             animationsEnabled={animationsEnabled}
             onAnimationsToggle={setAnimationsEnabled}
             showPredictions={showPredictions}
-            onShowPredictionsToggle={setShowPredictions}
+            onShowPredictionsToggle={() => {}} // TEMPORARILY DISABLED - empty function
             showDebugInfo={showDebugInfo}
             onShowDebugInfoToggle={setShowDebugInfo}
         />

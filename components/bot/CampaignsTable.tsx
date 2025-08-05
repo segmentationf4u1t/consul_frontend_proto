@@ -7,7 +7,7 @@ import { columns, TableRowData } from '@/components/tables/columns';
 import { SortingState } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CampaignPrediction } from '@/types/predictions';
+// import { CampaignPrediction } from '@/types/predictions'; // TEMPORARILY DISABLED
 import { useScreenSize } from '@/hooks/use-mobile';
 
 interface CampaignsTableProps {
@@ -16,7 +16,7 @@ interface CampaignsTableProps {
   setSorting: Dispatch<SetStateAction<SortingState>>;
   isInitialLoading: boolean;
   error: string | null;
-  predictions: Map<string, CampaignPrediction>;
+  predictions: Map<string, any>; // TEMPORARILY DISABLED - was: Map<string, CampaignPrediction>
   predictionsLoading: boolean;
   showPredictions: boolean;
 }
@@ -80,6 +80,9 @@ const secondsToTimeString = (seconds: number): string => {
 export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
   const { isMobile, isTablet } = useScreenSize();
   
+  // TEMPORARILY DISABLED - Force predictions off
+  const showPredictionsDisabled = false;
+  
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
   }
@@ -129,8 +132,8 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Add total row at the end - cast to the expected table row type
     const dataWithTotal = [...extendedData, totalRow] as TableRowData[];
     
-    const tableColumns = columns({ showPredictions, isMobile, isTablet });
-    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} showPredictions={showPredictions} />;
+    const tableColumns = columns({ showPredictions: showPredictionsDisabled, isMobile, isTablet });
+    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} showPredictions={showPredictionsDisabled} />;
   }
 
   if (error && !data) {

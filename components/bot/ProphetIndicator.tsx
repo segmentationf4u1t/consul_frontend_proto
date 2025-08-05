@@ -40,6 +40,10 @@ const calculateDataPeriod = (oldest: string | null, newest: string | null): stri
 };
 
 export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
+  // TEMPORARILY DISABLED - Predictions functionality disabled
+  return null;
+  
+  /* TEMPORARILY DISABLED - All ProphetIndicator functionality
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -101,6 +105,7 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
       </div>
     </div>
   );
+  */
 });
 
 ProphetIndicator.displayName = 'ProphetIndicator';
