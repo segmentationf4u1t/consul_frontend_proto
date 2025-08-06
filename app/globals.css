@@ -160,3 +160,156 @@
     animation: shine 1.5s ease-in-out;
   }
 }
+
+/* Animated orbs */
+@keyframes orbFloatA {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(20px, -15px, 0) scale(1.05);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes orbFloatB {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-16px, 20px, 0) scale(1.03);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes orbFloatC {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(10px, 10px, 0) scale(1.04);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.animate-orb-slow {
+  animation: orbFloatA 18s ease-in-out infinite;
+}
+
+.animate-orb-medium {
+  animation: orbFloatB 14s ease-in-out infinite;
+}
+
+.animate-orb-fast {
+  animation: orbFloatC 10s ease-in-out infinite;
+}
+
+/* Spotlight sweep */
+@keyframes sweep {
+  0% {
+    transform: translateX(-20%);
+    opacity: 0.35;
+  }
+
+  50% {
+    transform: translateX(0%);
+    opacity: 0.45;
+  }
+
+  100% {
+    transform: translateX(20%);
+    opacity: 0.35;
+  }
+}
+
+.animate-sweep {
+  animation: sweep 20s ease-in-out infinite alternate;
+}
+
+/* Animated grid */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(120, 120, 120, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(120, 120, 120, 0.25) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+  mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+}
+
+@keyframes gridMove {
+  0% {
+    background-position: 0px 0px, 0px 0px;
+  }
+
+  100% {
+    background-position: 32px 32px, 32px 32px;
+  }
+}
+
+.animate-grid-slow {
+  animation: gridMove 40s linear infinite;
+}
+
+/* Feature tiles spotlight and micro-interaction */
+.feature-tile {
+  position: relative;
+  transition: transform 300ms ease, border-color 300ms ease, background-color 300ms ease;
+  --x: 50%;
+  --y: 50%;
+}
+
+.feature-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  background: radial-gradient(120px 60px at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+.feature-tile:hover {
+  transform: translateY(-2px);
+}
+
+.feature-tile:hover::after {
+  opacity: 1;
+}
+
+/* Optional: subtle scanlines for system mood */
+.binary-scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.08),
+      rgba(0, 0, 0, 0.08) 1px,
+      transparent 2px,
+      transparent 3px);
+  opacity: 0.06;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-orb-slow,
+  .animate-orb-medium,
+  .animate-orb-fast,
+  .animate-sweep,
+  .animate-grid-slow {
+    animation: none !important;
+  }
+}

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Clock } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { format, subHours, isAfter } from 'date-fns';
+import { format, subHours } from 'date-fns';
 import { API_BASE_URL } from '@/lib/api-config';
 import { formatInTimeZone } from 'date-fns-tz';
 import { pl } from 'date-fns/locale';
@@ -16,12 +16,26 @@ const timeZone = 'Europe/Warsaw';
 
 interface HistoricalDataPoint {
   timestamp: string;
+  ts: number; // numeric ms since epoch for charting
   kolejka: number;
   zalogowani: number;
   gotowi: number;
   przerwa: number;
   rozmawiaja: number;
 }
+
+type PanelsPage = {
+  items: Array<{
+    id: number;
+    timestamp: string;
+    kolejka: number;
+    zalogowani: number;
+    gotowi: number;
+    przerwa: number;
+    rozmawiaja: number;
+  }>;
+  nextCursor: { ts: string; id: number } | null;
+};
 
 interface HistoricalChartProps {
   className?: string;
@@ -62,53 +76,98 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+// Utility to map a page of items to chart points
+const mapItems = (items: PanelsPage['items']): HistoricalDataPoint[] =>
+  items
+    .map((row) => {
+      const ts = new Date(row.timestamp).getTime();
+      return {
+        timestamp: row.timestamp,
+        ts,
+        kolejka: Number(row.kolejka ?? 0),
+        zalogowani: Number(row.zalogowani ?? 0),
+        gotowi: Number(row.gotowi ?? 0),
+        przerwa: Number(row.przerwa ?? 0),
+        rozmawiaja: Number(row.rozmawiaja ?? 0),
+      };
+    })
+    .filter((d) => !!d.timestamp && Number.isFinite(d.ts));
+
+// Force 48h cap
+const MAX_WINDOW_HOURS = 48;
+
 export function HistoricalChart({ className }: HistoricalChartProps) {
   const [data, setData] = useState<HistoricalDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('6h');
 
+  // Compute a fixed 48h cutoff; timeRange still controls UI buttons,
+  // but server fetch will never go past 48h.
+  const hardCutoff = useMemo(() => subHours(new Date(), MAX_WINDOW_HOURS), []);
+  const hardCutoffMs = hardCutoff.getTime();
+
   const fetchHistoricalData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/historical`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch historical data');
-      }
-      
-      const rawData = await response.json();
-      const allDataPoints: HistoricalDataPoint[] = [];
-      
-      // Parse CSV data from each file
-      Object.entries(rawData).forEach(([filename, csvContent]) => {
-        if (typeof csvContent === 'string') {
-          const lines = csvContent.trim().split('\n');
-          const headers = lines[0].split(',');
-          
-          for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',');
-            if (values.length === headers.length) {
-              const dataPoint: HistoricalDataPoint = {
-                timestamp: values[0],
-                kolejka: parseInt(values[1]) || 0,
-                zalogowani: parseInt(values[2]) || 0,
-                gotowi: parseInt(values[3]) || 0,
-                przerwa: parseInt(values[4]) || 0,
-                rozmawiaja: parseInt(values[5]) || 0,
-              };
-              allDataPoints.push(dataPoint);
-            }
+
+      const PAGE_SIZE = 1000;
+      const MAX_PAGES = 200; // safety cap
+
+      // Start from now back to 48h ago
+      const fromISO = new Date(hardCutoffMs).toISOString();
+
+      let url = `${API_BASE_URL}/historical/panels?limit=${PAGE_SIZE}&from=${encodeURIComponent(fromISO)}`;
+      let nextCursor: PanelsPage['nextCursor'] | null = null;
+      let accumulated: HistoricalDataPoint[] = [];
+      let pageCount = 0;
+
+      do {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Failed to fetch historical data (status ${res.status})`);
+        const page: PanelsPage = await res.json();
+
+        const mapped = mapItems(page.items);
+        accumulated = accumulated.concat(mapped);
+
+        nextCursor = page.nextCursor;
+
+        // If next page is older than 48h window, we can stop after this page
+        if (nextCursor) {
+          const nextTsMs = new Date(nextCursor.ts).getTime();
+          if (!Number.isFinite(nextTsMs) || nextTsMs <= hardCutoffMs) {
+            nextCursor = null;
           }
         }
-      });
-      
-      // Sort by timestamp
-      allDataPoints.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      setData(allDataPoints);
+
+        // Prepare next URL if continuing
+        if (nextCursor) {
+          const params = new URLSearchParams({
+            limit: String(PAGE_SIZE),
+            from: fromISO, // keep the 48h lower bound
+            cursorTs: nextCursor.ts,
+            cursorId: String(nextCursor.id),
+          });
+          url = `${API_BASE_URL}/historical/panels?${params.toString()}`;
+        }
+
+        pageCount += 1;
+
+        // Progressive render per page
+        const sorted = [...accumulated].sort((a, b) => a.ts - b.ts);
+        setData(sorted);
+
+        if (pageCount >= MAX_PAGES) {
+          nextCursor = null;
+        }
+      } while (nextCursor);
+
+      const finalSorted = [...accumulated].sort((a, b) => a.ts - b.ts);
+      setData(finalSorted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -116,23 +175,40 @@ export function HistoricalChart({ className }: HistoricalChartProps) {
 
   useEffect(() => {
     fetchHistoricalData();
-    
-    // Refresh data every 30 seconds
     const interval = setInterval(fetchHistoricalData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [/* optionally include a key if time range changes UI but fetch stays 48h */]);
 
+  // Filter: always clip to 48h (secondary guard)
+  const [xDomain, setXDomain] = useState<[number, number]>(() => {
+    const now = Date.now();
+    return [now - MAX_WINDOW_HOURS * 3600_000, now];
+  });
+
+  // Recompute domain on timeRange change
+  useEffect(() => {
+    const now = Date.now();
+    let start: number;
+    switch (timeRange) {
+      case '1h': start = now - 1 * 3600_000; break;
+      case '6h': start = now - 6 * 3600_000; break;
+      case '24h': start = now - 24 * 3600_000; break;
+      case 'all':
+      default: start = now - MAX_WINDOW_HOURS * 3600_000; break;
+    }
+    const end = now;
+    setXDomain([start, end]);
+  }, [timeRange]);
+
+  // Clamp filtered data strictly within domain to avoid stray points skewing scale
   const filteredData = useMemo(() => {
-    if (timeRange === 'all') return data;
-    
-    const now = new Date();
-    const cutoff = timeRange === '1h' ? subHours(now, 1) :
-                   timeRange === '6h' ? subHours(now, 6) :
-                   subHours(now, 24);
-    
-    return data.filter(point => isAfter(new Date(point.timestamp), cutoff));
-  }, [data, timeRange]);
+    const [start, end] = xDomain;
+    const clipped = data.filter(d => d.ts >= start && d.ts <= end);
+    // Ensure ascending order
+    return clipped.sort((a, b) => a.ts - b.ts);
+  }, [data, xDomain]);
 
+  // Compute explicit domain per mode
   const stats = useMemo(() => {
     if (filteredData.length === 0) return null;
     
@@ -257,10 +333,16 @@ export function HistoricalChart({ className }: HistoricalChartProps) {
                 ))}
               </defs>
               
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="timestamp"
-                tickFormatter={(value) => formatInTimeZone(new Date(value), timeZone, 'HH:mm', { locale: pl })}
+              <CartesianGrid strokeDasharray="3 3" className="opacity-20" />  // soften grid
+              <XAxis
+                dataKey="ts"
+                domain={xDomain}
+                type="number"
+                scale="time"
+                allowDataOverflow
+                tickFormatter={(value) =>
+                  formatInTimeZone(new Date(value), timeZone, 'HH:mm', { locale: pl })
+                }
                 className="text-xs"
                 tickLine={false}
                 axisLine={false}
@@ -270,49 +352,69 @@ export function HistoricalChart({ className }: HistoricalChartProps) {
               <Legend />
               
               <Area
-                type="monotoneX"
+                type="monotone"
                 dataKey="kolejka"
-                stackId="1"
                 stroke={metricColors.kolejka}
                 fill={`url(#colorkolejka)`}
                 name="Kolejka"
                 strokeWidth={2}
+                isAnimationActive={false}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                dot={false}
+                activeDot={false}
               />
               <Area
-                type="monotoneX"
+                type="monotone"
                 dataKey="zalogowani"
-                stackId="1"
                 stroke={metricColors.zalogowani}
                 fill={`url(#colorzalogowani)`}
                 name="Zalogowani"
                 strokeWidth={2}
+                isAnimationActive={false}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                dot={false}
+                activeDot={false}
               />
               <Area
-                type="monotoneX"
+                type="monotone"
                 dataKey="gotowi"
-                stackId="1"
                 stroke={metricColors.gotowi}
                 fill={`url(#colorgotowi)`}
                 name="Gotowi"
                 strokeWidth={2}
+                isAnimationActive={false}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                dot={false}
+                activeDot={false}
               />
               <Area
-                type="monotoneX"
+                type="monotone"
                 dataKey="przerwa"
-                stackId="1"
                 stroke={metricColors.przerwa}
                 fill={`url(#colorprzerwa)`}
                 name="Przerwa"
                 strokeWidth={2}
+                isAnimationActive={false}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                dot={false}
+                activeDot={false}
               />
               <Area
-                type="monotoneX"
+                type="monotone"
                 dataKey="rozmawiaja"
-                stackId="1"
                 stroke={metricColors.rozmawiaja}
                 fill={`url(#colorrozmawiaja)`}
                 name="Rozmawiają"
                 strokeWidth={2}
+                isAnimationActive={false}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                dot={false}
+                activeDot={false}
               />
             </AreaChart>
           </ResponsiveContainer>

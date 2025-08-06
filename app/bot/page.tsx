@@ -13,6 +13,7 @@ import { usePredictions } from '@/hooks/use-predictions';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { API_BASE_URL } from '@/lib/api-config';
+import { HistoricalChart } from '@/components/bot/HistoricalChart';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -100,13 +101,7 @@ export default function BotPage() {
             error={error}
           />
         </section>
-
-        {/*
-        <section>
-          <HistoricalChart />
-        </section>
-        */}
-
+  
         <section className="space-y-4">
           <CampaignsTable
             data={energaData}
@@ -126,6 +121,10 @@ export default function BotPage() {
               </div>
             </div>
           )}
+        </section>
+
+        <section>
+          <HistoricalChart />
         </section>
 
         {showDebugInfo && (
