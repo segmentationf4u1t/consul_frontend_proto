@@ -7,11 +7,9 @@ import { CampaignData } from '@/types/wallboard';
 import { API_BASE_URL } from '@/lib/api-config';
 
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
-  // TEMPORARILY DISABLED - Return empty state without API calls
-  const [predictions] = useState<Map<string, CampaignPrediction>>(new Map());
-  const [isLoading] = useState(false);
+  const [predictions, setPredictions] = useState<Map<string, CampaignPrediction>>(new Map());
+  const [isLoading, setIsLoading] = useState(false);
 
-  /* TEMPORARILY DISABLED - All prediction fetching functionality
   const fetchPrediction = useCallback(async (campaignName: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
@@ -31,16 +29,15 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       return;
     }
 
-    let isMounted = true; // Prevent state updates if component unmounted
+    let isMounted = true;
 
     const fetchAllPredictions = async () => {
       if (!isMounted) return;
-      
+
       setIsLoading(true);
-      
-      // Create campaign names array to avoid dependency on fetchPrediction
+
       const campaignNames = campaigns.map(c => c.kampanie);
-      
+
       try {
         const promises = campaignNames.map(async (campaignName) => {
           const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
@@ -52,7 +49,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
         });
 
         const results = await Promise.all(promises);
-        
+
         if (isMounted) {
           const newPredictions = new Map<string, CampaignPrediction>();
           results.forEach(({ campaignName, data }) => {
@@ -71,14 +68,12 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
 
     fetchAllPredictions();
 
-    const interval = setInterval(fetchAllPredictions, 60000); // Refresh every 60 seconds
-
+    const interval = setInterval(fetchAllPredictions, 480000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [campaigns]); // Removed fetchPrediction from dependencies
-  */
+  }, [campaigns]);
 
   return { predictions, isLoading };
 };

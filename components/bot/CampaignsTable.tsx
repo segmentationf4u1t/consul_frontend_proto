@@ -7,8 +7,8 @@ import { columns, TableRowData } from '@/components/tables/columns';
 import { SortingState } from '@tanstack/react-table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-// import { CampaignPrediction } from '@/types/predictions'; // TEMPORARILY DISABLED
 import { useScreenSize } from '@/hooks/use-mobile';
+import { CampaignPrediction } from '@/types/predictions';
 
 interface CampaignsTableProps {
   data: WallboardData | null;
@@ -16,7 +16,7 @@ interface CampaignsTableProps {
   setSorting: Dispatch<SetStateAction<SortingState>>;
   isInitialLoading: boolean;
   error: string | null;
-  predictions: Map<string, any>; // TEMPORARILY DISABLED - was: Map<string, CampaignPrediction>
+  predictions: Map<string, CampaignPrediction>; // TEMPORARILY DISABLED - was: Map<string, CampaignPrediction>
   predictionsLoading: boolean;
   showPredictions: boolean;
 }
@@ -80,9 +80,6 @@ const secondsToTimeString = (seconds: number): string => {
 export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
   const { isMobile, isTablet } = useScreenSize();
   
-  // TEMPORARILY DISABLED - Force predictions off
-  const showPredictionsDisabled = false;
-  
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
   }
@@ -97,22 +94,26 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     const totalOdebrane = extendedData.reduce((sum, campaign) => sum + (campaign.odebrane || 0), 0);
     const totalPolaczenia = extendedData.reduce((sum, campaign) => sum + (campaign.polaczenia || 0), 0);
     
-    // Calculate averages (excluding campaigns with 0 values for more accurate averages)
-    const campaignsWithOdebranePercent = extendedData.filter(c => c.odebranePercent > 0);
-    const campaignsWithCzasOczekiwania = extendedData.filter(c => timeStringToSeconds(c.czasOczekiwania) > 0);
-    const campaignsWithSrednyCzasRozmowy = extendedData.filter(c => timeStringToSeconds(c.srednyCzasRozmowy) > 0);
-    
-    const avgOdebranePercent = campaignsWithOdebranePercent.length > 0 
-      ? campaignsWithOdebranePercent.reduce((sum, c) => sum + c.odebranePercent, 0) / campaignsWithOdebranePercent.length 
-      : 0;
-    
-    const avgCzasOczekiwaniaSeconds = campaignsWithCzasOczekiwania.length > 0
-      ? campaignsWithCzasOczekiwania.reduce((sum, c) => sum + timeStringToSeconds(c.czasOczekiwania), 0) / campaignsWithCzasOczekiwania.length
-      : 0;
-    
-    const avgSrednyCzasRozmowySeconds = campaignsWithSrednyCzasRozmowy.length > 0
-      ? campaignsWithSrednyCzasRozmowy.reduce((sum, c) => sum + timeStringToSeconds(c.srednyCzasRozmowy), 0) / campaignsWithSrednyCzasRozmowy.length
-      : 0;
+    // Weighted/global metrics
+    const totalWaitWeightedSeconds = extendedData.reduce(
+      (sum, c) => sum + timeStringToSeconds(c.czasOczekiwania) * (c.polaczenia || 0),
+      0
+    );
+    const totalTalkWeightedSeconds = extendedData.reduce(
+      (sum, c) => sum + timeStringToSeconds(c.srednyCzasRozmowy) * (c.odebrane || 0),
+      0
+    );
+
+    const globalOdebranePercent =
+      totalPolaczenia > 0 ? (totalOdebrane / totalPolaczenia) * 100 : 0;
+
+    const avgCzasOczekiwaniaSeconds =
+      totalPolaczenia > 0 ? totalWaitWeightedSeconds / totalPolaczenia : 0;
+
+    // Prefer weighting by odebrane; fallback to polaczenia if no odebrane
+    const talkWeightDenominator = totalOdebrane > 0 ? totalOdebrane : totalPolaczenia;
+    const avgSrednyCzasRozmowySeconds =
+      talkWeightDenominator > 0 ? totalTalkWeightedSeconds / talkWeightDenominator : 0;
 
     // Create TOTAL row - pure frontend summary without predictions
     const totalRow = {
@@ -121,7 +122,7 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
       gotowi: null, // Empty for TOTAL row
       kolejka: null, // Empty for TOTAL row
       odebrane: totalOdebrane,
-      odebranePercent: Math.round(avgOdebranePercent * 100) / 100, // Round to 2 decimal places
+      odebranePercent: Math.round(globalOdebranePercent * 100) / 100, // Round to 2 decimals
       czasOczekiwania: secondsToTimeString(Math.round(avgCzasOczekiwaniaSeconds)),
       srednyCzasRozmowy: secondsToTimeString(Math.round(avgSrednyCzasRozmowySeconds)),
       polaczenia: totalPolaczenia,
@@ -132,8 +133,16 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Add total row at the end - cast to the expected table row type
     const dataWithTotal = [...extendedData, totalRow] as TableRowData[];
     
-    const tableColumns = columns({ showPredictions: showPredictionsDisabled, isMobile, isTablet });
-    return <DataTable columns={tableColumns} data={dataWithTotal} sorting={sorting} setSorting={setSorting} showPredictions={showPredictionsDisabled} />;
+    const tableColumns = columns({ showPredictions: showPredictions, isMobile, isTablet });
+    return (
+      <DataTable
+        columns={tableColumns}
+        data={dataWithTotal}
+        sorting={sorting}
+        setSorting={setSorting}
+        showPredictions={showPredictions}
+      />
+    );
   }
 
   if (error && !data) {

@@ -24,6 +24,7 @@ export function getApiBaseUrl(): string {
   }
 
   // For any other hostname (including dynamic external IPs), use the same hostname with port 3001
+
   return `http://${hostname}:3001`;
 }
 
