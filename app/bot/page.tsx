@@ -14,6 +14,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { API_BASE_URL } from '@/lib/api-config';
 import { HistoricalChart } from '@/components/bot/HistoricalChart';
+import { MetricCardsShakeStyle } from '@/components/bot/MetricCards';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -87,66 +88,69 @@ export default function BotPage() {
   }, [resetStallTimer]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <section className="relative">
-          <Header
-            connectionStatus={connectionStatus}
-            error={error}
-          />
-          
-          <MetricCards 
-            data={tipData} 
-            animationsEnabled={animationsEnabled}
-            isInitialLoading={isInitialLoading}
-            error={error}
-          />
-        </section>
-  
-        <section className="space-y-4">
-          <CampaignsTable
-            data={energaData}
-            sorting={sorting}
-            setSorting={setSorting}
-            isInitialLoading={isInitialLoading}
-            error={error}
-            predictions={predictions}
-            predictionsLoading={predictionsLoading}
-            showPredictions={showPredictions}
-          />
-
-          {showPredictions && (
-            <div className="flex">
-              <div className="w-80">
-                <ProphetIndicator />
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section>
-          <HistoricalChart timeRange={timeRange} onTimeRangeChange={setTimeRange} />
-        </section>
-
-        {showDebugInfo && (
-          <section>
-            <SystemInfoCard />
+    <>
+      <MetricCardsShakeStyle />
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <section className="relative">
+            <Header
+              connectionStatus={connectionStatus}
+              error={error}
+            />
+            
+            <MetricCards 
+              data={tipData} 
+              animationsEnabled={animationsEnabled}
+              isInitialLoading={isInitialLoading}
+              error={error}
+            />
           </section>
-        )}
-        
-        <ConnectionStatusIndicator 
-            status={connectionStatus} 
-            lastRefresh={lastRefresh} 
-            animationsEnabled={animationsEnabled}
-            onAnimationsToggle={setAnimationsEnabled}
-            showPredictions={showPredictions}
-            onShowPredictionsToggle={setShowPredictions}
-            showDebugInfo={showDebugInfo}
-            onShowDebugInfoToggle={setShowDebugInfo}
-            timeRange={timeRange}
-            onTimeRangeChange={setTimeRange}
-        />
+      
+          <section className="space-y-4">
+            <CampaignsTable
+              data={energaData}
+              sorting={sorting}
+              setSorting={setSorting}
+              isInitialLoading={isInitialLoading}
+              error={error}
+              predictions={predictions}
+              predictionsLoading={predictionsLoading}
+              showPredictions={showPredictions}
+            />
+
+            {showPredictions && (
+              <div className="flex">
+                <div className="w-80">
+                  <ProphetIndicator />
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section>
+            <HistoricalChart timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+          </section>
+
+          {showDebugInfo && (
+            <section>
+              <SystemInfoCard />
+            </section>
+          )}
+          
+          <ConnectionStatusIndicator 
+              status={connectionStatus} 
+              lastRefresh={lastRefresh} 
+              animationsEnabled={animationsEnabled}
+              onAnimationsToggle={setAnimationsEnabled}
+              showPredictions={showPredictions}
+              onShowPredictionsToggle={setShowPredictions}
+              showDebugInfo={showDebugInfo}
+              onShowDebugInfoToggle={setShowDebugInfo}
+              timeRange={timeRange}
+              onTimeRangeChange={setTimeRange}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

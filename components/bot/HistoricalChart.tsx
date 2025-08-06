@@ -60,41 +60,6 @@ const metricColors = {
   rozmawiaja: '#8b5cf6'    // purple
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-background border rounded-lg p-3 shadow-lg">
-        <p className="text-sm font-medium mb-2">
-          {formatInTimeZone(new Date(label), timeZone, 'HH:mm:ss', { locale: pl })}
-        </p>
-        {payload.map((entry: any, index: number) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-// Utility to map a page of items to chart points
-const mapItems = (items: PanelsPage['items']): HistoricalDataPoint[] =>
-  items
-    .map((row) => {
-      const ts = new Date(row.timestamp).getTime();
-      return {
-        timestamp: row.timestamp,
-        ts,
-        kolejka: Number(row.kolejka ?? 0),
-        zalogowani: Number(row.zalogowani ?? 0),
-        gotowi: Number(row.gotowi ?? 0),
-        przerwa: Number(row.przerwa ?? 0),
-        rozmawiaja: Number(row.rozmawiaja ?? 0),
-      };
-    })
-    .filter((d) => !!d.timestamp && Number.isFinite(d.ts));
-
 // Force 48h cap
 const MAX_WINDOW_HOURS = 48;
 
@@ -180,7 +145,6 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
     return () => clearInterval(interval);
   }, [/* optionally include a key if time range changes UI but fetch stays 48h */]);
 
-  // Initialize domain using incoming timeRange
   const [xDomain, setXDomain] = useState<[number, number]>(() => {
     const now = Date.now();
     let start: number;
@@ -197,40 +161,106 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
   // Recompute domain on timeRange change
   useEffect(() => {
     const now = Date.now();
-    let start: number;
+    let span: number;
     switch (timeRange) {
-      case '1h': start = now - 1 * 3600_000; break;
-      case '6h': start = now - 6 * 3600_000; break;
-      case '24h': start = now - 24 * 3600_000; break;
+      case '1h': span = 1 * 3600_000; break;
+      case '6h': span = 6 * 3600_000; break;
+      case '24h': span = 24 * 3600_000; break;
       case 'all':
-      default: start = now - MAX_WINDOW_HOURS * 3600_000; break;
+      default: span = MAX_WINDOW_HOURS * 3600_000; break;
     }
-    const end = now;
-    setXDomain([start, end]);
-  }, [timeRange]);
+
+    // If we have data, align the domain end to the latest point to avoid right-side empty gap
+    if (data.length > 0) {
+      const latestTs = data[data.length - 1].ts;
+      // add a small headroom (e.g., 1 minute) so the last point is not touching the edge
+      const end = latestTs + 60_000;
+      const start = end - span;
+      setXDomain([start, end]);
+    } else {
+      // fallback to now if no data yet
+      setXDomain([now - span, now]);
+    }
+  }, [timeRange, data]); // IMPORTANT: depend on data so domain updates when new data arrives
 
   // Clamp filtered data strictly within domain to avoid stray points skewing scale
   const filteredData = useMemo(() => {
     const [start, end] = xDomain;
     const clipped = data.filter(d => d.ts >= start && d.ts <= end);
-    // Ensure ascending order
     return clipped.sort((a, b) => a.ts - b.ts);
   }, [data, xDomain]);
 
-  // Compute explicit domain per mode
-  const stats = useMemo(() => {
-    if (filteredData.length === 0) return null;
-    
-    const latest = filteredData[filteredData.length - 1];
-    const earliest = filteredData[0];
-    
-    return {
-      latest,
-      earliest,
-      totalPoints: filteredData.length,
-      timeSpan: new Date(latest.timestamp).getTime() - new Date(earliest.timestamp).getTime()
-    };
-  }, [filteredData]);
+  // NEW: Derive renderDomain from filteredData to avoid left (and right) gaps
+  const renderDomain = useMemo<[number, number]>(() => {
+    const leftPad = 60_000;  // 1 minute
+    const rightPad = 60_000; // 1 minute
+
+    if (filteredData.length > 0) {
+      const earliestTs = filteredData[0].ts;
+      const latestTs = filteredData[filteredData.length - 1].ts;
+
+      // Anchor start at the earliest visible point (minus tiny pad), but not earlier than requested xDomain start
+      const start = Math.max(earliestTs - leftPad, xDomain[0]);
+      // Anchor end at the latest visible point (plus tiny pad), but not later than requested xDomain end
+      const end = Math.min(latestTs + rightPad, xDomain[1]);
+
+      // If degenerate (e.g., all points the same), fall back to xDomain
+      if (end - start < 1_000) return xDomain;
+      return [start, end];
+    }
+
+    return xDomain;
+  }, [filteredData, xDomain]);
+
+  // Update tick formatter to use renderDomain
+  const tickFormat = useMemo(() => {
+    const [start, end] = renderDomain;
+    const spanMs = end - start;
+    const oneHour = 3600_000;
+    if (spanMs <= 6 * oneHour) return 'HH:mm';
+    if (spanMs <= 24 * oneHour) return 'HH:mm';
+    return 'dd.MM HH:mm';
+  }, [renderDomain]);
+
+  // Define CustomTooltip INSIDE the component (no hooks inside it)
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const [start, end] = xDomain; // or renderDomain if you use that
+      const spanMs = end - start;
+      const tooltipFmt = spanMs > 24 * 3600_000 ? 'dd.MM HH:mm:ss' : 'HH:mm:ss';
+
+      return (
+        <div className="bg-background border rounded-lg p-3 shadow-lg">
+          <p className="text-sm font-medium mb-2">
+            {formatInTimeZone(label as number, timeZone, tooltipFmt, { locale: pl })}
+          </p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Utility to map a page of items to chart points
+  const mapItems = (items: PanelsPage['items']): HistoricalDataPoint[] =>
+    items
+      .map((row) => {
+        const ts = new Date(row.timestamp).getTime();
+        return {
+          timestamp: row.timestamp,
+          ts,
+          kolejka: Number(row.kolejka ?? 0),
+          zalogowani: Number(row.zalogowani ?? 0),
+          gotowi: Number(row.gotowi ?? 0),
+          przerwa: Number(row.przerwa ?? 0),
+          rozmawiaja: Number(row.rozmawiaja ?? 0),
+        };
+      })
+      .filter((d) => !!d.timestamp && Number.isFinite(d.ts));
 
   if (loading) {
     return (
@@ -297,12 +327,12 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
             Wykres historyczny
           </CardTitle>
           <div className="flex items-center gap-2">
-            {stats && (
+            {/* stats && (
               <Badge variant="secondary" className="text-xs">
                 <Clock className="h-3 w-3 mr-1" />
                 {stats.totalPoints} punktów
               </Badge>
-            )}
+            ) */}
             <Button
               variant="outline"
               size="sm"
@@ -346,12 +376,12 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
               <CartesianGrid strokeDasharray="3 3" className="opacity-20" />  // soften grid
               <XAxis
                 dataKey="ts"
-                domain={xDomain}
+                domain={renderDomain}  // keep only this
                 type="number"
                 scale="time"
-                allowDataOverflow
+                allowDataOverflow={false} // clamp to domain to avoid whitespace
                 tickFormatter={(value) =>
-                  formatInTimeZone(new Date(value), timeZone, 'HH:mm', { locale: pl })
+                  formatInTimeZone(value as number, timeZone, tickFormat, { locale: pl })
                 }
                 className="text-xs"
                 tickLine={false}
