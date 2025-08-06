@@ -39,6 +39,8 @@ type PanelsPage = {
 
 interface HistoricalChartProps {
   className?: string;
+  timeRange: '1h' | '6h' | '24h' | 'all';
+  onTimeRangeChange: (range: '1h' | '6h' | '24h' | 'all') => void;
 }
 
 type TimeRange = '1h' | '6h' | '24h' | 'all';
@@ -96,11 +98,10 @@ const mapItems = (items: PanelsPage['items']): HistoricalDataPoint[] =>
 // Force 48h cap
 const MAX_WINDOW_HOURS = 48;
 
-export function HistoricalChart({ className }: HistoricalChartProps) {
+export function HistoricalChart({ className, timeRange, onTimeRangeChange }: HistoricalChartProps) {
   const [data, setData] = useState<HistoricalDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<TimeRange>('6h');
 
   // Compute a fixed 48h cutoff; timeRange still controls UI buttons,
   // but server fetch will never go past 48h.
@@ -179,10 +180,18 @@ export function HistoricalChart({ className }: HistoricalChartProps) {
     return () => clearInterval(interval);
   }, [/* optionally include a key if time range changes UI but fetch stays 48h */]);
 
-  // Filter: always clip to 48h (secondary guard)
+  // Initialize domain using incoming timeRange
   const [xDomain, setXDomain] = useState<[number, number]>(() => {
     const now = Date.now();
-    return [now - MAX_WINDOW_HOURS * 3600_000, now];
+    let start: number;
+    switch (timeRange) {
+      case '1h': start = now - 1 * 3600_000; break;
+      case '6h': start = now - 6 * 3600_000; break;
+      case '24h': start = now - 24 * 3600_000; break;
+      case 'all':
+      default: start = now - MAX_WINDOW_HOURS * 3600_000; break;
+    }
+    return [start, now];
   });
 
   // Recompute domain on timeRange change
@@ -305,19 +314,20 @@ export function HistoricalChart({ className }: HistoricalChartProps) {
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        {/* Removed local timeframe buttons */}
+        {/* <div className="flex flex-wrap gap-2">
           {(Object.keys(timeRangeLabels) as TimeRange[]).map((range) => (
             <Button
               key={range}
               variant={timeRange === range ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange(range)}
+              onClick={() => onTimeRangeChange(range)}
               className="h-8 text-xs"
             >
               {timeRangeLabels[range]}
             </Button>
           ))}
-        </div>
+        </div> */}
       </CardHeader>
       
       <CardContent>

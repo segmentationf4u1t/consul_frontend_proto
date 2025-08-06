@@ -40,10 +40,20 @@ const calculateDataPeriod = (oldest: string | null, newest: string | null): stri
 };
 
 export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
-  // TEMPORARILY DISABLED - Predictions functionality disabled
-  return null;
-  
-  /* TEMPORARILY DISABLED - All ProphetIndicator functionality
+  // Remove this to make the component visible:
+  // return null;
+
+  // Option 1: Show only a small static badge until backend is ready
+  return (
+    <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
+      <Badge variant="outline" className="gap-1 text-xs">
+        <Brain className="h-3 w-3 text-blue-500" />
+        Prophet ML
+      </Badge>
+    </div>
+  );
+
+  /* Option 2: Re-enable full info block when API is ready
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

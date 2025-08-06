@@ -31,6 +31,7 @@ export default function BotPage() {
   const stallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { predictions, isLoading: predictionsLoading } = usePredictions(energaData?.campaigns);
+  const [timeRange, setTimeRange] = useLocalStorage<'1h' | '6h' | '24h' | 'all'>('historicalTimeRange', '6h');
 
   const resetStallTimer = useCallback(() => {
     if (stallTimeoutRef.current) {
@@ -124,7 +125,7 @@ export default function BotPage() {
         </section>
 
         <section>
-          <HistoricalChart />
+          <HistoricalChart timeRange={timeRange} onTimeRangeChange={setTimeRange} />
         </section>
 
         {showDebugInfo && (
@@ -142,6 +143,8 @@ export default function BotPage() {
             onShowPredictionsToggle={setShowPredictions}
             showDebugInfo={showDebugInfo}
             onShowDebugInfoToggle={setShowDebugInfo}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
         />
       </div>
     </div>
