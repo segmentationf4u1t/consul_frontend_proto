@@ -72,8 +72,9 @@ const MetricCard = memo(({ label, value, animationsEnabled, indicator, shakeInte
     const shakeDurationMs = 900 - clampedIntensity * 600; // faster with intensity
   
     // Wrapper shake config (shakes whole panel: border + card + overlays + rain + content)
+    // Disable shake entirely when animationsEnabled is false
     const wrapperShakeStyle =
-      clampedIntensity > 0
+      animationsEnabled && clampedIntensity > 0
         ? {
             animation: `metric-shake ${Math.max(150, shakeDurationMs)}ms ease-in-out infinite`,
             ['--shake-amplitude' as any]: `${shakeAmplitude}px`,
@@ -131,7 +132,7 @@ const MetricCard = memo(({ label, value, animationsEnabled, indicator, shakeInte
         />
 
                {/* Eyes rain layer (behind content, clipped to card) — only for Kolejka and only when intensity > 0 */}
-{label === 'Kolejka' && clampedIntensity > 0 && (
+{label === 'Kolejka' && animationsEnabled && clampedIntensity > 0 && (
           <div
           className={`absolute inset-0 z-[5] overflow-hidden pointer-events-none transition-opacity duration-300 ${
             clampedIntensity > 0 ? 'opacity-100' : 'opacity-0'
