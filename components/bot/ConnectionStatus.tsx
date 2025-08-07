@@ -150,7 +150,7 @@ export const ConnectionStatusIndicator = memo(({
                     disabled={busy !== null}
                     aria-label="Revalidate data"
                   >
-                    <RotateCw className={`h-4 w-4 ${busy ? 'animate-spin' : ''}`} />
+                    <RotateCw className={`h-4 w-4 origin-center ${busy ? 'motion-safe:animate-spin' : ''}`} />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>

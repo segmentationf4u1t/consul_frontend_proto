@@ -88,7 +88,7 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
       <Card className={className}>
         <CardContent className="p-3">
           <div className="flex items-center gap-2">
-            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+            <RefreshCw className="h-3 w-3 origin-center motion-safe:animate-spin text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Ładowanie...</span>
           </div>
         </CardContent>
@@ -134,7 +134,7 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
             disabled={isRefreshing}
             className="h-8 w-8 p-0"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 origin-center ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
           </Button>
         </div>
 
