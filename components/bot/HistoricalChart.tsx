@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Clock } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { format, subHours } from 'date-fns';
+import { subHours } from 'date-fns';
 import { API_BASE_URL } from '@/lib/api-config';
 import { formatInTimeZone } from 'date-fns-tz';
 import { pl } from 'date-fns/locale';
@@ -65,17 +65,44 @@ const MAX_WINDOW_HOURS = 48;
 
 export function HistoricalChart({ className, timeRange, onTimeRangeChange }: HistoricalChartProps) {
   const [data, setData] = useState<HistoricalDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);            // first load only
+  const [refreshing, setRefreshing] = useState(false);     // subsequent fetches
   const [error, setError] = useState<string | null>(null);
+  const dataRef = useRef<HistoricalDataPoint[]>([]);
+
+  // utility: shallow-equal by length and last item timestamp
+  const isSameData = (a: HistoricalDataPoint[], b: HistoricalDataPoint[]) => {
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+    if (a.length === 0) return true;
+    return a[a.length - 1].ts === b[b.length - 1].ts;
+  };
+
+  // small debounce for state commits
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commitData = (next: HistoricalDataPoint[]) => {
+    if (isSameData(dataRef.current, next)) return;
+    dataRef.current = next;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setData(next);
+    }, 80);
+  };
 
   // Compute a fixed 48h cutoff; timeRange still controls UI buttons,
   // but server fetch will never go past 48h.
   const hardCutoff = useMemo(() => subHours(new Date(), MAX_WINDOW_HOURS), []);
   const hardCutoffMs = hardCutoff.getTime();
 
+  const firstLoadDoneRef = useRef(false);
+
   const fetchHistoricalData = async () => {
     try {
-      setLoading(true);
+      if (!firstLoadDoneRef.current) {
+        setLoading(true);     // show skeleton only on first load
+      } else {
+        setRefreshing(true);  // keep chart visible during updates
+      }
       setError(null);
 
       const PAGE_SIZE = 1000;
@@ -122,7 +149,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
 
         // Progressive render per page
         const sorted = [...accumulated].sort((a, b) => a.ts - b.ts);
-        setData(sorted);
+        commitData(sorted);
 
         if (pageCount >= MAX_PAGES) {
           nextCursor = null;
@@ -130,12 +157,14 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
       } while (nextCursor);
 
       const finalSorted = [...accumulated].sort((a, b) => a.ts - b.ts);
-      setData(finalSorted);
+      commitData(finalSorted);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      setData([]);
+      // keep existing data to avoid blink
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      firstLoadDoneRef.current = true;
     }
   };
 
@@ -143,7 +172,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
     fetchHistoricalData();
     const interval = setInterval(fetchHistoricalData, 30000);
     return () => clearInterval(interval);
-  }, [/* optionally include a key if time range changes UI but fetch stays 48h */]);
+  }, []);
 
   const [xDomain, setXDomain] = useState<[number, number]>(() => {
     const now = Date.now();
@@ -157,6 +186,11 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
     }
     return [start, now];
   });
+
+  // When updating xDomain, skip if unchanged
+  const setXDomainStable = (next: [number, number]) => {
+    setXDomain((prev) => (prev[0] === next[0] && prev[1] === next[1] ? prev : next));
+  };
 
   // Recompute domain on timeRange change
   useEffect(() => {
@@ -176,10 +210,10 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
       // add a small headroom (e.g., 1 minute) so the last point is not touching the edge
       const end = latestTs + 60_000;
       const start = end - span;
-      setXDomain([start, end]);
+      setXDomainStable([start, end]);
     } else {
       // fallback to now if no data yet
-      setXDomain([now - span, now]);
+      setXDomainStable([now - span, now]);
     }
   }, [timeRange, data]); // IMPORTANT: depend on data so domain updates when new data arrives
 
@@ -262,7 +296,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
       })
       .filter((d) => !!d.timestamp && Number.isFinite(d.ts));
 
-  if (loading) {
+  if (loading && !firstLoadDoneRef.current) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -327,18 +361,8 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
             Wykres historyczny
           </CardTitle>
           <div className="flex items-center gap-2">
-            {/* stats && (
-              <Badge variant="secondary" className="text-xs">
-                <Clock className="h-3 w-3 mr-1" />
-                {stats.totalPoints} punktów
-              </Badge>
-            ) */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchHistoricalData}
-              className="h-8"
-            >
+            {refreshing && <Badge variant="secondary" className="text-xs">Aktualizuję…</Badge>}
+            <Button variant="outline" size="sm" onClick={fetchHistoricalData} className="h-8">
               Odśwież
             </Button>
           </div>

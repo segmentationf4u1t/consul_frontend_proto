@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { revalidateHistorical, revalidatePredictions } from '@/lib/api-revalidate';
+import { TotalCallsChart } from '@/components/bot/TotalCallsChart';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -262,8 +263,16 @@ export default function BotPage() {
             )}
           </section>
 
-          <section>
-            <HistoricalChart timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+          <section className="mt-6">
+            {/* 2-column responsive layout: 1 column on small screens, 2 columns from md up */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="min-w-0">
+                <HistoricalChart timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+              </div>
+              <div className="min-w-0">
+                <TotalCallsChart timeRange={timeRange} />
+              </div>
+            </div>
           </section>
 
           {showDebugInfo && (
