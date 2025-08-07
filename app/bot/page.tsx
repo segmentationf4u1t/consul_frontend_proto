@@ -15,6 +15,16 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { API_BASE_URL } from '@/lib/api-config';
 import { HistoricalChart } from '@/components/bot/HistoricalChart';
 import { MetricCardsShakeStyle } from '@/components/bot/MetricCards';
+import { DynamicIslandNav } from '@/components/ui/dynamic-island-nav';
+import { Button } from '@/components/ui/button';
+import { Bell, RotateCw } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { revalidateHistorical, revalidatePredictions } from '@/lib/api-revalidate';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -66,6 +76,11 @@ export default function BotPage() {
       }
       setLastRefresh(new Date());
       setIsInitialLoading(false);
+      if (data?.control === 'refresh') {
+        // Call your data refreshers here:
+        // refetchPredictions?.();
+        // refetchHistorical?.();
+      }
     };
 
     eventSource.onerror = (err) => {
@@ -87,8 +102,128 @@ export default function BotPage() {
     };
   }, [resetStallTimer]);
 
+  // Optionally, bring your data hooks or reload logic here.
+  // For example, if you have custom hooks:
+  // const { refetch: refetchPredictions } = usePredictions('Energa')
+  // const { refetch: refetchHistorical } = useHistorical(...)
+
+  const [busy, setBusy] = useState<boolean>(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function act(fn: () => Promise<any>) {
+    try {
+      setBusy(true);
+      setMsg(null);
+      await fn();
+      setMsg('Revalidation queued');
+    } catch (e: any) {
+      setMsg(e?.message ?? 'Failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
+      {/* Dynamic Island Navigation */}
+      <DynamicIslandNav
+        leading={
+          <div className="flex items-center gap-3 pl-1">
+            {/* Brand orb */}
+            <div className="relative h-5 w-5 rounded-full">
+              <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/90 via-primary/70 to-primary/40 shadow-[0_0_12px_rgba(0,0,0,0.08)]" />
+              <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/20 to-transparent mix-blend-overlay" />
+            </div>
+
+            {/* Branding block: company + project name */}
+            <div className="flex items-center gap-3">
+              
+              <div className="leading-tight">
+                
+                <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/80">
+                  Crafted by
+                </div>
+                <div className="text-xs font-medium text-foreground/90">
+                  Cyfrowa Manufaktura
+                </div>
+              </div>
+
+            </div>
+          </div>
+        }
+        title={
+          <div className="flex items-center justify-center gap-2">
+            <span className="truncate">Wallboard</span>
+            <span className="text-xs text-muted-foreground">— Dashboard</span>
+          </div>
+        }
+        trailing={
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Akcje">
+                  <RotateCw className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => revalidatePredictions('Energa')} title="Operacja może być kosztowna obliczeniowo">
+                  Prognozy (Energa) — ostrożnie
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => revalidateHistorical('panels')} title="Operacja może być kosztowna obliczeniowo">
+                  Historia: Panele — ostrożnie
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => revalidateHistorical('campaigns')} title="Operacja może być kosztowna obliczeniowo">
+                  Historia: Kampanie — ostrożnie
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => revalidateHistorical()} title="Operacja może być kosztowna obliczeniowo">
+                  Historia: Wszystko — ostrożnie
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Powiadomienia">
+              <Bell className="h-4 w-4" />
+            </Button>
+          </div>
+        }
+        expandedContent={
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border p-2">
+              <div className="text-[11px] text-muted-foreground">Status</div>
+              <div className="mt-1 text-sm">
+                {connectionStatus === 'connected' ? 'Połączono' : connectionStatus === 'reconnecting' ? 'Ponowne łączenie…' : 'Brak połączenia'}
+              </div>
+            </div>
+            <div className="rounded-lg border p-2">
+              <div className="text-[11px] text-muted-foreground">Zakres</div>
+              <div className="mt-1 flex items-center gap-1">
+                {(['1h','6h','24h','all'] as const).map(r => (
+                  <button
+                    key={r}
+                    className={`px-2 py-0.5 rounded text-xs border ${timeRange === r ? 'bg-primary text-primary-foreground' : 'bg-background'}`}
+                    onClick={() => setTimeRange(r)}
+                    aria-pressed={timeRange === r}
+                    title={`Zakres: ${r}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border p-2">
+              <div className="text-[11px] text-muted-foreground">Szybkie akcje</div>
+              <div className="mt-1 flex items-center gap-1">
+                <Button variant="secondary" size="sm" className="h-7">Eksport CSV</Button>
+                <Button variant="secondary" size="sm" className="h-7">Filtrowanie</Button>
+              </div>
+            </div>
+          </div>
+        }
+        maxWidth={920}
+        minWidth={560}
+      />
+      {/* push page content down a bit to avoid overlap */}
+      <div className="h-16" />
+
       <MetricCardsShakeStyle />
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 space-y-8">
@@ -149,6 +284,8 @@ export default function BotPage() {
               timeRange={timeRange}
               onTimeRangeChange={setTimeRange}
           />
+
+        
         </div>
       </div>
     </>
