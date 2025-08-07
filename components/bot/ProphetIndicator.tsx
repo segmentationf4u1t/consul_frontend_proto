@@ -2,9 +2,10 @@
 
 import { memo, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Brain, SlidersHorizontal } from 'lucide-react';
+import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { API_BASE_URL } from '@/lib/api-config';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProphetIndicatorProps {
   className?: string;
@@ -49,14 +50,39 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
     let cancelled = false;
     const fetchPreview = async () => {
       try {
-        // Use a cheap endpoint: small campaign prediction to surface metadata
-        const res = await fetch(`${API_BASE_URL}/predictions/campaigns/Energa`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
+        const candidates = [
+          'TIP_Ogolna_PL',
+          'TIP_Ogolna_EN',
+          'TIP_Onkologia_PL',
+          'TIP_Ogolna_RU',
+          'TIP_Ogolna_UA',
+          'Polenergia 991',
+          'Energa'
+        ];
+
+        let found: any = null;
+        for (const name of candidates) {
+          const res = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(name)}`);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data && data.modelUsed === 'prophet') {
+            found = data;
+            break;
+          }
+          // Keep last good response as fallback (even if heuristic)
+          if (!found) found = data;
+        }
+
         if (cancelled) return;
-        setModelType(typeof data.modelType === 'string' ? data.modelType : null);
-        setModelConfig(Array.isArray(data.modelConfig) ? data.modelConfig : null);
-        setModelUsed(typeof data.modelUsed === 'string' ? data.modelUsed : null);
+        if (found) {
+          setModelType(typeof found.modelType === 'string' ? found.modelType : null);
+          setModelConfig(Array.isArray(found.modelConfig) ? found.modelConfig : null);
+          setModelUsed(typeof found.modelUsed === 'string' ? found.modelUsed : null);
+        } else {
+          setModelType(null);
+          setModelConfig(null);
+          setModelUsed(null);
+        }
       } catch {
         if (!cancelled) {
           setModelType(null);
@@ -76,34 +102,51 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
     };
   }, []);
 
+  const renderInlineSummary = () => {
+    if (loading) return '…';
+    if (!(modelUsed === 'prophet')) return null;
+    const cfg = modelConfig ?? [];
+    const shortMap: Record<string, string> = {
+      '5min_increments': '5m',
+      'PL_holidays': 'PL',
+      'business_hours_regressor': 'BH',
+      'multiplicative_seasonality': 'mult',
+      'interval_0.8': 'iw=0.8',
+      'changepoint_prior_0.01': 'cp=0.01',
+      'seasonality_prior_3.0': 'sp=3.0',
+    };
+    const short = cfg.map(c => shortMap[c] ?? c).slice(0, 3).join(' • ');
+    if (short) return short;
+    if (modelType) return modelType;
+    return null;
+  };
+
   return (
-    <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
-      <Badge variant="outline" className="gap-1 text-xs">
-        <Brain className="h-3 w-3 text-blue-500" />
-        {modelUsed === 'prophet' && modelType ? (
-          <span className="max-w-[160px] truncate" title={modelType}>{modelType}</span>
-        ) : (
-          'Prophet'
-        )}
-      </Badge>
-      {loading ? (
-        <span className="text-muted-foreground/70">…</span>
-      ) : modelUsed === 'prophet' && modelType ? (
-        <>
-          {modelConfig && modelConfig.length > 0 && (
-            <div className="hidden sm:flex items-center gap-1 text-[11px]">
-              <SlidersHorizontal className="h-3 w-3 opacity-70" />
-              <span className="truncate max-w-[200px]" title={modelConfig.join(', ')}>
-                {modelConfig.slice(0, 3).join(' • ')}
-                {modelConfig.length > 3 ? ' …' : ''}
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={cn("flex items-center text-xs text-muted-foreground", className)}>
+            <Badge variant="outline" className="gap-1 text-[11px] leading-none px-2 py-0.5">
+              <Brain className="h-3 w-3 text-blue-500" />
+              <span>Prophet</span>
+              {renderInlineSummary() && (
+                <span className="hidden sm:inline text-muted-foreground/80">•</span>
+              )}
+              <span className="hidden sm:inline max-w-[160px] truncate" title={modelType ?? undefined}>
+                {renderInlineSummary()}
               </span>
-            </div>
-          )}
-        </>
-      ) : (
-        <span className="text-muted-foreground/70">heuristic</span>
-      )}
-    </div>
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="start" className="max-w-xs">
+          <div className="space-y-1">
+            <div className="text-[12px] text-muted-foreground">Prophet configuration</div>
+            <div className="text-[12px]"><span className="text-muted-foreground">Model:</span> {modelType ?? '—'}</div>
+            <div className="text-[12px]"><span className="text-muted-foreground">Tags:</span> {modelConfig?.join(' • ') ?? '—'}</div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
 
