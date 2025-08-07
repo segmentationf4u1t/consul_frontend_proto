@@ -302,13 +302,16 @@ const renderDomain = useMemo<[number, number]>(() => {
                 </linearGradient>
               </defs>
 
-              <CartesianGrid strokeDasharray="3 3" className="opacity-20" />
+              {/* Soften grid without relying on Tailwind on SVG */}
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
               <XAxis
                 dataKey="ts"
                 domain={renderDomain}
                 type="number"
                 scale="time"
                 allowDataOverflow={false}
+                minTickGap={20}
+                interval="preserveStartEnd"
                 tickFormatter={(value) =>
                   formatInTimeZone(value as number, timeZone, tickFormat, { locale: pl })
                 }
@@ -331,6 +334,7 @@ const renderDomain = useMemo<[number, number]>(() => {
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
             </AreaChart>
           </ResponsiveContainer>

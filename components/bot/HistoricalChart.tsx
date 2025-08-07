@@ -43,14 +43,7 @@ interface HistoricalChartProps {
   onTimeRangeChange: (range: '1h' | '6h' | '24h' | 'all') => void;
 }
 
-type TimeRange = '1h' | '6h' | '24h' | 'all';
-
-const timeRangeLabels = {
-  '1h': 'Ostatnia godzina',
-  '6h': 'Ostatnie 6 godzin',
-  '24h': 'Ostatnie 24 godziny',
-  'all': 'Wszystkie dane'
-};
+// Removed unused time range types/labels to avoid linter warnings
 
 const metricColors = {
   kolejka: '#ef4444',      // red
@@ -247,7 +240,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
   // Define CustomTooltip INSIDE the component (no hooks inside it)
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const [start, end] = xDomain; // or renderDomain if you use that
+      const [start, end] = renderDomain;
       const spanMs = end - start;
       const tooltipFmt = spanMs > 24 * 3600_000 ? 'dd.MM HH:mm:ss' : 'HH:mm:ss';
 
@@ -372,13 +365,16 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 ))}
               </defs>
               
-              <CartesianGrid strokeDasharray="3 3" className="opacity-20" />  // soften grid
+              {/* Soften grid without invalid JSX comments or Tailwind on SVG */}
+              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
               <XAxis
                 dataKey="ts"
-                domain={renderDomain}  // keep only this
+                domain={renderDomain}
                 type="number"
                 scale="time"
-                allowDataOverflow={false} // clamp to domain to avoid whitespace
+                allowDataOverflow={false}
+                minTickGap={20}
+                interval="preserveStartEnd"
                 tickFormatter={(value) =>
                   formatInTimeZone(value as number, timeZone, tickFormat, { locale: pl })
                 }
@@ -402,6 +398,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
               <Area
                 type="monotone"
@@ -415,6 +412,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
               <Area
                 type="monotone"
@@ -428,6 +426,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
               <Area
                 type="monotone"
@@ -441,6 +440,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
               <Area
                 type="monotone"
@@ -454,6 +454,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={false}
+                connectNulls
               />
             </AreaChart>
           </ResponsiveContainer>
