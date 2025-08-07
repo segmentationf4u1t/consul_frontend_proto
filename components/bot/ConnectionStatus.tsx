@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
@@ -73,19 +73,7 @@ export const ConnectionStatusIndicator = memo(({
     return () => clearTimeout(timer);
   }, [msg]);
 
-  // Add a local flag to delay slot collapse until chip finishes exiting
-  const [slotOpen, setSlotOpen] = useState(false);
-
-  // When msg appears/disappears, handle slot timing
-  useEffect(() => {
-    if (msg) {
-      setSlotOpen(true); // open immediately when message shows
-    } else {
-      // delay collapse to allow chip exit to complete smoothly
-      const t = setTimeout(() => setSlotOpen(false), 260); // should match chip exit duration
-      return () => clearTimeout(t);
-    }
-  }, [msg]);
+  // No layout reservation: message chip is overlaid absolutely so it doesn't push siblings
 
   async function handleRevalidatePredictions() {
     try {
@@ -151,6 +139,26 @@ export const ConnectionStatusIndicator = memo(({
                     aria-label="Revalidate data"
                   >
                     <RotateCw className={`h-4 w-4 origin-center ${busy ? 'motion-safe:animate-spin' : ''}`} />
+                    <AnimatePresence initial={false}>
+                      {msg && (
+                        <motion.div
+                          key={`mini-chip-${msg.text}`}
+                          className="pointer-events-none absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full"
+                          initial={{ opacity: 0, y: 2 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 2 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          style={{ width: 16, height: 16 }}
+                          aria-hidden
+                        >
+                          <div className={`${msg.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'} rounded-full shadow-sm`} style={{ width: 16, height: 16 }}>
+                            <div className="flex items-center justify-center w-full h-full text-[10px] leading-none text-white">
+                              {msg.type === 'success' ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -198,82 +206,7 @@ export const ConnectionStatusIndicator = memo(({
           ))}
         </div>
 
-        {/* Animated slot to avoid snap width changes */}
-        <div className="hidden md:inline-flex relative items-center" aria-live="polite" role="status">
-          {/* Width reservation: opens/closes based on slotOpen, not msg */}
-          <AnimatePresence initial={false}>
-            {slotOpen ? (
-              <motion.div
-                key="reserve-open"
-                initial={{ width: 0 }}
-                animate={{ width: 200 }} // fixed max reservation space
-                exit={{ width: 0 }}
-                transition={{ duration: 0.28, ease: 'easeOut' }}
-                className="h-0"
-                style={{ willChange: 'width' }}
-              />
-            ) : (
-              <motion.div
-                key="reserve-closed"
-                initial={false}
-                animate={{ width: 0 }}
-                transition={{ duration: 0.2, ease: 'easeIn' }}
-                className="h-0"
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Absolutely positioned chip inside the reservation */}
-          <div className="absolute inset-y-0 right-0 flex items-center">
-            <AnimatePresence mode="wait" initial={false}>
-              {msg && (
-                <motion.div
-                  key={`pulse-chip-${msg.text}`}
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 260,
-                    damping: 26,
-                    mass: 0.6,
-                    // soften exit specifically
-                    opacity: { duration: 0.24, ease: 'easeInOut' },
-                    y: { duration: 0.24, ease: 'easeOut' },
-                    scale: { duration: 0.24, ease: 'easeOut' }
-                  }}
-                  className="relative flex items-center gap-2 rounded-full px-3 py-1 text-xs
-                             bg-background/70 backdrop-blur-md shadow-sm"
-                >
-                  {/* halo */}
-                  <span
-                    className={`pointer-events-none absolute inset-0 -z-10 rounded-full blur-md ${
-                      msg.type === 'success'
-                        ? 'bg-gradient-to-r from-emerald-500/10 via-emerald-400/10 to-emerald-500/10'
-                        : 'bg-gradient-to-r from-rose-500/10 via-rose-400/10 to-rose-500/10'
-                    }`}
-                  />
-                  {/* dot */}
-                  <span className={`${msg.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'} h-2 w-2 rounded-full shadow-sm`} />
-                  {/* text */}
-                  <span className={msg.type === 'success' ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-700 dark:text-rose-200'}>
-                    {msg.text}
-                  </span>
-                  {/* underline sweep */}
-                  <span className="pointer-events-none absolute left-2 right-2 -bottom-1 h-px overflow-hidden">
-                    <motion.span
-                      key="sweep"
-                      initial={{ x: '-100%' }}
-                      animate={{ x: '100%' }}
-                      transition={{ duration: 1.7, ease: [0.22, 0.8, 0.2, 1] }}
-                      className={`${msg.type === 'success' ? 'bg-emerald-500/70' : 'bg-rose-500/70'} block h-px w-1/2 rounded-full`}
-                    />
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+        {/* Feedback handled inline on the refresh button via a tiny corner badge; no extra layout */}
       </div>
     </div>
   );

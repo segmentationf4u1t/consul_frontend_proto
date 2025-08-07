@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Clock, Database, Timer } from 'lucide-react';
+import { Brain, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -40,82 +40,71 @@ const calculateDataPeriod = (oldest: string | null, newest: string | null): stri
 };
 
 export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
-  // Remove this to make the component visible:
-  // return null;
-
-  // Option 1: Show only a small static badge until backend is ready
-  return (
-    <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
-      <Badge variant="outline" className="gap-1 text-xs">
-        <Brain className="h-3 w-3 text-blue-500" />
-        Prophet ML
-      </Badge>
-    </div>
-  );
-
-  /* Option 2: Re-enable full info block when API is ready
-  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [modelType, setModelType] = useState<string | null>(null);
+  const [modelConfig, setModelConfig] = useState<string[] | null>(null);
+  const [modelUsed, setModelUsed] = useState<'prophet' | 'heuristic' | 'heuristic_cold_start' | 'none' | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchSystemInfo = async () => {
+    let cancelled = false;
+    const fetchPreview = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/system/info`);
-        if (response.ok) {
-          const data = await response.json();
-          setSystemInfo(data);
+        // Use a cheap endpoint: small campaign prediction to surface metadata
+        const res = await fetch(`${API_BASE_URL}/predictions/campaigns/Energa`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        if (cancelled) return;
+        setModelType(typeof data.modelType === 'string' ? data.modelType : null);
+        setModelConfig(Array.isArray(data.modelConfig) ? data.modelConfig : null);
+        setModelUsed(typeof data.modelUsed === 'string' ? data.modelUsed : null);
+      } catch {
+        if (!cancelled) {
+          setModelType(null);
+          setModelConfig(null);
+          setModelUsed(null);
         }
-      } catch (error) {
-        console.error('Failed to fetch system info:', error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchSystemInfo();
-    const interval = setInterval(fetchSystemInfo, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    fetchPreview();
+    const id = setInterval(fetchPreview, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
-
-  const campaignRecords = systemInfo?.database.totalRecords.campaignLogs ?? 0;
-  const dataPeriod = calculateDataPeriod(
-    systemInfo?.database.oldestRecord ?? null,
-    systemInfo?.database.newestRecord ?? null
-  );
 
   return (
     <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
       <Badge variant="outline" className="gap-1 text-xs">
         <Brain className="h-3 w-3 text-blue-500" />
-        Prophet ML
+        {modelUsed === 'prophet' && modelType ? (
+          <span className="max-w-[160px] truncate" title={modelType}>{modelType}</span>
+        ) : (
+          'Prophet'
+        )}
       </Badge>
-      
-      <div className="flex items-center gap-1">
-        <Database className="h-3 w-3" />
-        <span className="font-mono">
-          {isLoading ? '...' : formatNumber(campaignRecords)}
-        </span>
-      </div>
-      
-      <div className="flex items-center gap-1">
-        <Timer className="h-3 w-3" />
-        <span className="font-mono">
-          {isLoading ? '...' : dataPeriod}
-        </span>
-      </div>
-      
-      <div className="flex items-center gap-1">
-        <Clock className="h-3 w-3" />
-        <span className="font-mono">5min</span>
-      </div>
-      
-      <div className="flex items-center gap-1">
-        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-        <span className="font-mono">50+</span>
-      </div>
+      {loading ? (
+        <span className="text-muted-foreground/70">…</span>
+      ) : modelUsed === 'prophet' && modelType ? (
+        <>
+          {modelConfig && modelConfig.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1 text-[11px]">
+              <SlidersHorizontal className="h-3 w-3 opacity-70" />
+              <span className="truncate max-w-[200px]" title={modelConfig.join(', ')}>
+                {modelConfig.slice(0, 3).join(' • ')}
+                {modelConfig.length > 3 ? ' …' : ''}
+              </span>
+            </div>
+          )}
+        </>
+      ) : (
+        <span className="text-muted-foreground/70">heuristic</span>
+      )}
     </div>
   );
-  */
 });
 
 ProphetIndicator.displayName = 'ProphetIndicator';
