@@ -207,8 +207,8 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
     // If we have data, align the domain end to the latest point to avoid right-side empty gap
     if (data.length > 0) {
       const latestTs = data[data.length - 1].ts;
-      // add a small headroom (e.g., 1 minute) so the last point is not touching the edge
-      const end = latestTs + 60_000;
+      // no headroom: end exactly at the latest point
+      const end = latestTs;
       const start = end - span;
       setXDomainStable([start, end]);
     } else {
@@ -227,7 +227,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
   // NEW: Derive renderDomain from filteredData to avoid left (and right) gaps
   const renderDomain = useMemo<[number, number]>(() => {
     const leftPad = 60_000;  // 1 minute
-    const rightPad = 60_000; // 1 minute
+    const rightPad = 0;      // no future headroom
 
     if (filteredData.length > 0) {
       const earliestTs = filteredData[0].ts;
