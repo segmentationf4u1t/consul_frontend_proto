@@ -153,6 +153,7 @@ export function TotalCallsChart({ className, timeRange = '6h' }: Props) {
     setXDomain((prev) => (prev[0] === next[0] && prev[1] === next[1] ? prev : next));
   };
 
+
   useEffect(() => {
     const now = Date.now();
     let span: number;
@@ -165,13 +166,14 @@ export function TotalCallsChart({ className, timeRange = '6h' }: Props) {
     }
     if (data.length > 0) {
       const latestTs = data[data.length - 1].ts;
-      const end = latestTs;
+      const end = Math.min(latestTs, Date.now()); // clamp to "now"
       const start = end - span;
       setXDomainStable([start, end]);
     } else {
       setXDomainStable([now - span, now]);
     }
   }, [timeRange, data]);
+
 
   // NEW: filter data to xDomain so the chart truly reflects the selected range
   const filteredData = useMemo(() => {
@@ -181,16 +183,20 @@ export function TotalCallsChart({ className, timeRange = '6h' }: Props) {
   }, [data, xDomain]);
 
   // Render domain to clip to visible data and reduce whitespace
-  const renderDomain = useMemo<[number, number]>(() => {
-    if (filteredData.length === 0) return xDomain;
-    const leftPad = 60_000;
-    const rightPad = 0;
-    const earliest = filteredData[0].ts;
-    const latest = filteredData[filteredData.length - 1].ts;
-    const start = Math.max(earliest - leftPad, xDomain[0]);
-    const end = Math.min(latest + rightPad, xDomain[1]);
-    return end - start < 1_000 ? xDomain : [start, end];
-  }, [filteredData, xDomain]);
+
+const renderDomain = useMemo<[number, number]>(() => {
+  if (filteredData.length === 0) return xDomain;
+  const leftPad = 60_000;
+  const rightPad = 0;
+  const earliest = filteredData[0].ts;
+  const latest = filteredData[filteredData.length - 1].ts;
+  const now = Date.now();
+  const endRaw = Math.min(latest + rightPad, xDomain[1]);
+  const end = Math.min(endRaw, now); // clamp to "now"
+  const start = Math.max(earliest - leftPad, xDomain[0]);
+  return end - start < 1_000 ? xDomain : [start, end];
+}, [filteredData, xDomain]);
+
 
   const tickFormat = useMemo(() => {
     const [start, end] = renderDomain;

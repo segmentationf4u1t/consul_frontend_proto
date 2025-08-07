@@ -203,19 +203,16 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
       case 'all':
       default: span = MAX_WINDOW_HOURS * 3600_000; break;
     }
-
-    // If we have data, align the domain end to the latest point to avoid right-side empty gap
     if (data.length > 0) {
       const latestTs = data[data.length - 1].ts;
-      // no headroom: end exactly at the latest point
-      const end = latestTs;
+      const end = Math.min(latestTs, now); // clamp to now
       const start = end - span;
       setXDomainStable([start, end]);
     } else {
-      // fallback to now if no data yet
       setXDomainStable([now - span, now]);
     }
-  }, [timeRange, data]); // IMPORTANT: depend on data so domain updates when new data arrives
+  }, [timeRange, data]);
+
 
   // Clamp filtered data strictly within domain to avoid stray points skewing scale
   const filteredData = useMemo(() => {
@@ -226,24 +223,15 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
 
   // NEW: Derive renderDomain from filteredData to avoid left (and right) gaps
   const renderDomain = useMemo<[number, number]>(() => {
-    const leftPad = 60_000;  // 1 minute
-    const rightPad = 0;      // no future headroom
-
-    if (filteredData.length > 0) {
-      const earliestTs = filteredData[0].ts;
-      const latestTs = filteredData[filteredData.length - 1].ts;
-
-      // Anchor start at the earliest visible point (minus tiny pad), but not earlier than requested xDomain start
-      const start = Math.max(earliestTs - leftPad, xDomain[0]);
-      // Anchor end at the latest visible point (plus tiny pad), but not later than requested xDomain end
-      const end = Math.min(latestTs + rightPad, xDomain[1]);
-
-      // If degenerate (e.g., all points the same), fall back to xDomain
-      if (end - start < 1_000) return xDomain;
-      return [start, end];
-    }
-
-    return xDomain;
+    if (filteredData.length === 0) return xDomain;
+    const leftPad = 60_000;
+    const rightPad = 0;
+    const earliest = filteredData[0].ts;
+    const latest = filteredData[filteredData.length - 1].ts;
+    const now = Date.now();
+    const start = Math.max(earliest - leftPad, xDomain[0]);
+    const end = Math.min(Math.min(latest + rightPad, xDomain[1]), now); // clamp end to now
+    return end - start < 1_000 ? xDomain : [start, end];
   }, [filteredData, xDomain]);
 
   // Update tick formatter to use renderDomain
@@ -368,20 +356,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
           </div>
         </div>
         
-        {/* Removed local timeframe buttons */}
-        {/* <div className="flex flex-wrap gap-2">
-          {(Object.keys(timeRangeLabels) as TimeRange[]).map((range) => (
-            <Button
-              key={range}
-              variant={timeRange === range ? "default" : "outline"}
-              size="sm"
-              onClick={() => onTimeRangeChange(range)}
-              className="h-8 text-xs"
-            >
-              {timeRangeLabels[range]}
-            </Button>
-          ))}
-        </div> */}
+        
       </CardHeader>
       
       <CardContent>
