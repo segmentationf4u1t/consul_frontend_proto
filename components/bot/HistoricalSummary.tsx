@@ -1,0 +1,191 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { API_BASE_URL } from '@/lib/api-config'
+import { cn } from '@/lib/utils'
+import type { CampaignHistoricalSummary as Summary } from '@/types/historical'
+
+// Type moved to '@/types/historical'
+
+interface HistoricalSummaryProps {
+  campaign: string
+  className?: string
+}
+
+export default function HistoricalSummary({ campaign, className }: HistoricalSummaryProps) {
+  const [data, setData] = useState<Summary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchSummary = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(campaign)}`)
+        if (!res.ok) throw new Error('Failed to load summary')
+        const json = (await res.json()) as Summary
+        if (!cancelled) setData(json)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? 'Failed to load')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchSummary()
+    const id = setInterval(fetchSummary, 5 * 60 * 1000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [campaign])
+
+  const period = useMemo(() => {
+    if (!data?.oldestUTC || !data?.newestUTC) return '—'
+    const a = new Date(data.oldestUTC)
+    const b = new Date(data.newestUTC)
+    const days = Math.max(1, Math.ceil((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)))
+    return `${days} dni`
+  }, [data])
+
+  const weekdayNames = ['Nd','Pn','Wt','Śr','Cz','Pt','So']
+
+  return (
+    <Card className={cn('w-full', className)}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="px-2 py-0.5 text-[11px]">Historia</Badge>
+            <span className="font-mono">{campaign}</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">{loading ? '…' : `${period}`}</div>
+        </div>
+
+        {error && (
+          <div className="text-[12px] text-destructive">{error}</div>
+        )}
+
+        {!error && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <Metric label="Najstarszy" value={data?.oldestUTC ? new Date(data.oldestUTC).toLocaleString('pl-PL') : '—'} mono />
+            <Metric label="Najnowszy" value={data?.newestUTC ? new Date(data.newestUTC).toLocaleString('pl-PL') : '—'} mono />
+            <Metric label="Rekordy" value={fmt(data?.totalRecords)} mono />
+            <Metric label="Liczba dni" value={fmt(data?.daysTracked)} mono />
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-md border p-3">
+            <div className="text-[11px] text-muted-foreground mb-1">Szczyt dzienny</div>
+            <div className="text-sm">
+              <span className="font-semibold">{fmtExact(data?.peakDailyTotal)}</span>
+              <span className="text-muted-foreground ml-2">{data?.peakDailyDateLocal ?? ''}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <Metric label="Średnia/dzień" value={fmtFloat(data?.avgDailyTotal)} />
+              <Metric label="Mediana/dzień" value={fmtFloat(data?.medianDailyTotal)} />
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3">
+            <div className="text-[11px] text-muted-foreground mb-1">Średnie wg dni tygodnia</div>
+            <div className="grid grid-cols-3 gap-1 text-[11px]">
+              {data?.weekdayAverages?.map(w => (
+                <div key={w.weekday} className="flex items-center justify-between bg-muted/40 rounded px-1.5 py-0.5">
+                  <span className="text-muted-foreground">{weekdayNames[w.weekday]}</span>
+                  <span className="font-mono">{Math.round(w.avgTotal)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3">
+            <div className="text-[11px] text-muted-foreground mb-1">Pokrycie danych</div>
+            <div className="text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Śr. wierszy/dzień</span>
+                <span className="font-mono">{Math.round(data?.coverage.avgRowsPerDay ?? 0)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Dni ≥ {data?.coverage.threshold}</span>
+                <span className="font-mono">{data?.coverage.daysWithAtLeast ?? 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-md border p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] text-muted-foreground">Ostatnie sumy dzienne</div>
+            <Sparkline values={data?.recentDailyTotals?.map(d => d.total) ?? []} />
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {data?.recentDailyTotals?.map((d) => (
+              <div key={d.dateLocal} className="text-[11px] px-1.5 py-0.5 rounded bg-muted/50">
+                <span className="font-mono">{d.dateLocal}</span>
+                <span className="mx-1">•</span>
+                <span className="font-mono">{d.total}</span>
+              </div>
+            )) || <span className="text-[12px] text-muted-foreground">—</span>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function fmt(n: number | null | undefined) {
+  if (n === null || n === undefined) return '—'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' mln'
+  if (n >= 1_000) return Math.round(n / 1_000) + ' tys'
+  return String(n)
+}
+
+function fmtExact(n: number | null | undefined) {
+  if (n === null || n === undefined) return '—'
+  return new Intl.NumberFormat('pl-PL').format(n)
+}
+
+function fmtFloat(n: number | null | undefined) {
+  if (n === null || n === undefined) return '—'
+  return new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(n)
+}
+
+function Metric({ label, value, mono }: { label: string; value: string | number; mono?: boolean }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-muted-foreground text-[11px]">{label}</div>
+      <div className={cn('text-sm', mono ? 'font-mono' : '')}>{value}</div>
+    </div>
+  )
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  if (!values || values.length === 0) return null
+  const width = 120
+  const height = 28
+  const padding = 4
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const step = (width - padding * 2) / Math.max(1, values.length - 1)
+  const points = values
+    .map((v, i) => {
+      const x = padding + i * step
+      const y = height - padding - ((v - min) / range) * (height - padding * 2)
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <svg width={width} height={height} aria-hidden className="text-muted-foreground/60">
+      <polyline
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        points={points}
+      />
+    </svg>
+  )
+}
+
+

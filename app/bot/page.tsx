@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { revalidateHistorical, revalidatePredictions } from '@/lib/api-revalidate';
 import { TotalCallsChart } from '@/components/bot/TotalCallsChart';
+import HistoricalSummary from '@/components/bot/HistoricalSummary';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -274,6 +275,7 @@ export default function BotPage() {
               </div>
             </div>
           </section>
+          <HistoricalSummary campaign="Tip_Ogolna_PL" />
 
           {showDebugInfo && (
             <section>

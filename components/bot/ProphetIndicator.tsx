@@ -48,41 +48,14 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
 
   useEffect(() => {
     let cancelled = false;
-    const fetchPreview = async () => {
+    const fetchMeta = async () => {
       try {
-        const candidates = [
-          'TIP_Ogolna_PL',
-          'TIP_Ogolna_EN',
-          'TIP_Onkologia_PL',
-          'TIP_Ogolna_RU',
-          'TIP_Ogolna_UA',
-          'Polenergia 991',
-          'Energa'
-        ];
-
-        let found: any = null;
-        for (const name of candidates) {
-          const res = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(name)}`);
-          if (!res.ok) continue;
-          const data = await res.json();
-          if (data && data.modelUsed === 'prophet') {
-            found = data;
-            break;
-          }
-          // Keep last good response as fallback (even if heuristic)
-          if (!found) found = data;
-        }
-
+        const res = await fetch(`${API_BASE_URL}/predictions/meta`);
+        const meta = await res.json();
         if (cancelled) return;
-        if (found) {
-          setModelType(typeof found.modelType === 'string' ? found.modelType : null);
-          setModelConfig(Array.isArray(found.modelConfig) ? found.modelConfig : null);
-          setModelUsed(typeof found.modelUsed === 'string' ? found.modelUsed : null);
-        } else {
-          setModelType(null);
-          setModelConfig(null);
-          setModelUsed(null);
-        }
+        setModelType(typeof meta.modelType === 'string' ? meta.modelType : null);
+        setModelConfig(Array.isArray(meta.modelConfig) ? meta.modelConfig : null);
+        setModelUsed(typeof meta.modelUsed === 'string' ? meta.modelUsed : null);
       } catch {
         if (!cancelled) {
           setModelType(null);
@@ -94,8 +67,8 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
       }
     };
 
-    fetchPreview();
-    const id = setInterval(fetchPreview, 5 * 60 * 1000);
+    fetchMeta();
+    const id = setInterval(fetchMeta, 5 * 60 * 1000);
     return () => {
       cancelled = true;
       clearInterval(id);
