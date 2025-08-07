@@ -165,7 +165,7 @@ export function TotalCallsChart({ className, timeRange = '6h' }: Props) {
     }
     if (data.length > 0) {
       const latestTs = data[data.length - 1].ts;
-      const end = latestTs + 60_000;
+      const end = latestTs;
       const start = end - span;
       setXDomainStable([start, end]);
     } else {
@@ -184,7 +184,7 @@ export function TotalCallsChart({ className, timeRange = '6h' }: Props) {
   const renderDomain = useMemo<[number, number]>(() => {
     if (filteredData.length === 0) return xDomain;
     const leftPad = 60_000;
-    const rightPad = 60_000;
+    const rightPad = 0;
     const earliest = filteredData[0].ts;
     const latest = filteredData[filteredData.length - 1].ts;
     const start = Math.max(earliest - leftPad, xDomain[0]);
