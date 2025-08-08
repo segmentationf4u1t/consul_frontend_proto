@@ -1,54 +1,116 @@
-# Consul Wallboard Frontend
+## Consul Wallboard — Frontend
 
-A real-time dashboard built with Next.js and Shadcn/UI to visualize wallboard data from the [Consul Stack Wallboard API](https://github.com/segmentationf4u1t/consul_backend_proto).
+A real-time dashboard built with Next.js and Shadcn UI. It visualizes live wallboard data, historical trends, and daily forecasts from the backend API.
 
-## Features
+### Features
 
-- **Real-Time Data**: Connects to the backend's Server-Sent Events (SSE) endpoint to display live data without needing to refresh the page.
-- **Predictive Forecasting**: The campaigns table includes a "Prognoza" (Forecast) column that shows the predicted total calls for the day, with an animated progress bar to track real-time progress.
-- **Metric Cards**: Displays high-level panel data (Queue, Logged In, Ready, etc.) in animated cards that highlight when values change.
-- **Campaign Table**: Shows a detailed breakdown of all active campaigns in a clean, sortable table.
-- **Connection Status**: A clear indicator shows the current connection status to the backend (connected, reconnecting, or error).
-- **Graceful Error Handling**: If the backend is unavailable, the dashboard displays a clear error message without crashing.
-- **Responsive Design**: The layout is fully responsive and works on desktop and mobile devices.
-- **Theming**: Includes a light/dark mode toggle.
+- **Live data (SSE)**: listens to `/wallboard/events` and updates without page reloads
+- **Forecasts (optional)**: "Prognoza" column and progress bars per campaign; inline Prophet badge with model tags
+- **KPI panels**: animated metric cards, SL/ASA panel, global health of forecasts (MAPE)
+- **Historical views**: responsive chart, queue/calls heatmaps, drilldown drawer per campaign
+- **Status & controls**: connection indicator, quick revalidation actions, toggles for predictions/animations/debug
 
-## Tech Stack
+### Tech stack
 
-- **Framework**: [Next.js](https://nextjs.org/) (App Router)
-- **UI**: [Shadcn/UI](https://ui.shadcn.com/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- Next.js 15 (App Router), React 19, TypeScript
+- Shadcn UI, Tailwind CSS
+- Recharts, date-fns-tz
 
-## Getting Started
+---
+
+## Quickstart
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later)
-- [Bun](https://bun.sh/) (as the package manager/runtime)
-- A running instance of the [Consul Stack Wallboard API](https://github.com/segmentationf4u1t/consul_backend_proto) on `http://localhost:3000`.
+- Node 18+ (Node 20 recommended) or Bun 1.1+
+- Backend API running (defaults to port `3001` in this repo)
 
-### Installation
+### Install
 
-1.  Clone the repository:
-    ```bash
-    git clone git@github.com:segmentationf4u1t/consul_frontend_proto.git
-    cd consul_frontend_proto
-    ```
+```bash
+cd front
+bun install
+```
 
-2.  Install dependencies:
-    ```bash
-    bun install
-    ```
-
-### Running the Development Server
-
-To start the development server, run:
+### Run (dev)
 
 ```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+Open `http://localhost:3000`. The app will auto-detect the API:
+- Client-side: same hostname, port `3001` (e.g., `http://localhost:3001`)
+- Server-side (SSR): override recommended via env var (see below)
 
-The page will automatically connect to the backend API and start displaying data.
+### Configure API URL (optional)
+
+By default the app targets the same host on port `3001`. To point at a different backend, set `NEXT_PUBLIC_API_URL`:
+
+```bash
+# Bash
+export NEXT_PUBLIC_API_URL=http://your-backend-host:3001
+bun run dev
+```
+
+```powershell
+# PowerShell
+$env:NEXT_PUBLIC_API_URL="http://your-backend-host:3001"
+bun run dev
+```
+
+In production builds this should be set to a stable backend URL to avoid SSR fallback behavior.
+
+### Build & start (prod)
+
+```bash
+bun run build
+bun run start   # serves on port 3000
+```
+
+Available scripts (from `front/package.json`):
+
+```bash
+bun run dev     # next dev --turbopack
+bun run build   # next build
+bun run start   # next start
+bun run lint    # next lint
+```
+
+---
+
+## Architecture overview
+
+- Entry page: `app/bot/page.tsx` — composes metric cards, campaigns table, charts, heatmaps and the drilldown drawer
+- Live data: SSE from `GET /wallboard/events` updates `tip` and `energa` panels
+- Predictions: `hooks/use-predictions.ts` fetches `GET /predictions/campaigns/:campaign`
+- Historical: charts/heatmaps fetch `GET /historical/panels` and `GET /historical/calls` with cursor pagination
+- Revalidation actions: UI triggers endpoints exposed by the backend via helpers in `lib/api-revalidate.ts`
+- API base URL resolution: `lib/api-config.ts` (uses `NEXT_PUBLIC_API_URL` when provided)
+
+Key components (selected):
+- `components/bot/MetricCards.tsx` — live panel metrics (with optional animations)
+- `components/bot/CampaignsTable.tsx` — sortable table with predictions and coverage badges
+- `components/bot/HistoricalChart.tsx` — 48h capped responsive area chart
+- `components/bot/CallsHeatmap.tsx`, `components/bot/QueueHeatmap.tsx` — day×hour heatmaps
+- `components/bot/ProphetIndicator.tsx` — model tags/summary badge
+- `components/bot/HistoricalSummary.tsx` — per‑campaign data coverage and recent totals
+- `components/bot/SlaKpiPanel.tsx` — ASA, answer/abandon proxy, SL 80/20 proxy
+
+Types live in `types/`, utilities in `lib/` and hooks in `hooks/`.
+
+---
+
+## Troubleshooting
+
+- **SSE not connecting**: ensure backend is reachable from the browser at `http(s)://<host>:3001` and CORS allows the frontend origin
+- **Wrong API host/port**: set `NEXT_PUBLIC_API_URL` explicitly; for remote access, prefer a DNS name/IP stable for both client and server
+- **Empty history/heatmaps**: historical endpoints require pre-populated data; check backend revalidation tasks
+- **Predictions missing**: ensure prediction endpoints are enabled and populated in the backend; toggle predictions in the footer chip
+- **Timezone mismatches**: visuals assume `Europe/Warsaw` for bucketing/labels in charts/heatmaps
+
+---
+
+## Notes
+
+- Default backend port is `3001` (see `lib/api-config.ts`); dev server runs on `3000`
+- For deployments, set `NEXT_PUBLIC_API_URL` to a stable backend URL to keep SSR and client consistent

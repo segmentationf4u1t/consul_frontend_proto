@@ -284,9 +284,6 @@ const renderDomain = useMemo<[number, number]>(() => {
           <CardTitle>Połączenia (suma)</CardTitle>
           <div className="flex items-center gap-2">
             {refreshing && <Badge variant="secondary" className="text-xs">Aktualizuję…</Badge>}
-            <Button variant="outline" size="sm" onClick={fetchCalls} className="h-8">
-              Odśwież
-            </Button>
           </div>
         </div>
       </CardHeader>

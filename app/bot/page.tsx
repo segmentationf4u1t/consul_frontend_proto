@@ -31,6 +31,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, Dr
 import type { CampaignHistoricalSummary as Summary } from '@/types/historical';
 import { SlaKpiPanel } from '@/components/bot/SlaKpiPanel';
 import { CampaignVarianceMini } from '@/components/bot/CampaignVarianceMini';
+import { CallsHeatmap } from '@/components/bot/CallsHeatmap';
+import { QueueHeatmap } from '@/components/bot/QueueHeatmap';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -319,6 +321,10 @@ export default function BotPage() {
               </div>
               <div className="min-w-0">
                 <TotalCallsChart timeRange={timeRange} />
+              </div>
+              
+              <div className="md:col-span-2 min-w-0">
+                <QueueHeatmap days={7} />
               </div>
             </div>
           </section>

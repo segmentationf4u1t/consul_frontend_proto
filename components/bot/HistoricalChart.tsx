@@ -343,9 +343,6 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
           </CardTitle>
           <div className="flex items-center gap-2">
             {refreshing && <Badge variant="secondary" className="text-xs">Aktualizuję…</Badge>}
-            <Button variant="outline" size="sm" onClick={fetchHistoricalData} className="h-8">
-              Odśwież
-            </Button>
           </div>
         </div>
         
