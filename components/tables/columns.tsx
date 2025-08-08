@@ -1,6 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+import type { ReactNode } from "react"
 import { CampaignData } from "@/types/wallboard"
 import { CampaignPrediction } from "@/types/predictions"
 import type { CampaignHistoricalSummary as Summary } from "@/types/historical"
@@ -195,7 +196,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
         const kolejka = row.getValue("kolejka") as number | null;
         const isTotal = row.original.isTotal;
         const kampanie = row.getValue("kampanie") as string;
-        let icon: JSX.Element | null = null;
+        let icon: ReactNode = null;
         if (!isTotal && typeof kolejka === 'number' && kolejka >= 10) {
           icon = <span title="Wysoka kolejka" className="ml-1 text-yellow-600">▲</span>
         }

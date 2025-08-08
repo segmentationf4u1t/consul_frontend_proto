@@ -49,7 +49,7 @@ export function CampaignVarianceMini({ campaign }: { campaign: string }) {
     return () => { cancelled = true }
   }, [campaign])
 
-  const mape = data?.mape
+  const mape = data?.mape ?? null
   const days = useMemo(() => (data?.days ?? []).slice().reverse(), [data])
 
   return (
