@@ -12,12 +12,15 @@ import type { CampaignHistoricalSummary as Summary } from '@/types/historical'
 interface HistoricalSummaryProps {
   campaign: string
   className?: string
+  onSummaryLoaded?: (summary: Summary) => void
+  density?: 'normal' | 'compact'
 }
 
-export default function HistoricalSummary({ campaign, className }: HistoricalSummaryProps) {
+export default function HistoricalSummary({ campaign, className, onSummaryLoaded, density = 'normal' }: HistoricalSummaryProps) {
   const [data, setData] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const compact = density === 'compact'
 
   useEffect(() => {
     let cancelled = false
@@ -27,7 +30,10 @@ export default function HistoricalSummary({ campaign, className }: HistoricalSum
         const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(campaign)}`)
         if (!res.ok) throw new Error('Failed to load summary')
         const json = (await res.json()) as Summary
-        if (!cancelled) setData(json)
+        if (!cancelled) {
+          setData(json)
+          if (onSummaryLoaded) onSummaryLoaded(json)
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? 'Failed to load')
       } finally {
@@ -52,12 +58,12 @@ export default function HistoricalSummary({ campaign, className }: HistoricalSum
   return (
     <Card className={cn('w-full', className)}>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className="px-2 py-0.5 text-[11px]">Historia</Badge>
-            <span className="font-mono">{campaign}</span>
+        <div className="flex items-center justify-between mb-3 min-w-0">
+          <div className={cn('flex items-center gap-2 text-muted-foreground min-w-0', compact ? 'text-[10px]' : 'text-xs')}>
+            <Badge variant="outline" className={cn('px-2 py-0.5', compact ? 'text-[10px]' : 'text-[11px]')}>Historia</Badge>
+            <span className="font-mono truncate">{campaign}</span>
           </div>
-          <div className="text-[11px] text-muted-foreground">{loading ? '…' : `${period}`}</div>
+          <div className={cn('text-muted-foreground', compact ? 'text-[10px]' : 'text-[11px]')}>{loading ? '…' : `${period}`}</div>
         </div>
 
         {error && (
@@ -73,54 +79,55 @@ export default function HistoricalSummary({ campaign, className }: HistoricalSum
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded-md border p-3">
-            <div className="text-[11px] text-muted-foreground mb-1">Szczyt dzienny</div>
-            <div className="text-sm">
-              <span className="font-semibold">{fmtExact(data?.peakDailyTotal)}</span>
-              <span className="text-muted-foreground ml-2">{data?.peakDailyDateLocal ?? ''}</span>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
+          <div className="rounded-md border p-3 overflow-hidden">
+            <div className={cn('text-muted-foreground mb-1', compact ? 'text-[10px]' : 'text-[11px]')}>Szczyt dzienny</div>
+            <div className={cn('flex items-center justify-between gap-2 min-w-0', compact ? 'text-xs' : 'text-sm')}>
+              <span className="font-semibold flex-shrink-0">{fmtExact(data?.peakDailyTotal)}</span>
+              <span className="text-muted-foreground truncate text-xs">{data?.peakDailyDateLocal ?? ''}</span>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <Metric label="Średnia/dzień" value={fmtFloat(data?.avgDailyTotal)} />
-              <Metric label="Mediana/dzień" value={fmtFloat(data?.medianDailyTotal)} />
+            <div className={cn('mt-3 grid grid-cols-2 gap-2', compact ? 'text-[10px]' : 'text-xs')}>
+              <Metric label="Średnia/dzień" value={fmtFloat(data?.avgDailyTotal)} small={compact} />
+              <Metric label="Mediana/dzień" value={fmtFloat(data?.medianDailyTotal)} small={compact} />
             </div>
           </div>
 
-          <div className="rounded-md border p-3">
-            <div className="text-[11px] text-muted-foreground mb-1">Średnie wg dni tygodnia</div>
-            <div className="grid grid-cols-3 gap-1 text-[11px]">
-              {data?.weekdayAverages?.map(w => (
-                <div key={w.weekday} className="flex items-center justify-between bg-muted/40 rounded px-1.5 py-0.5">
-                  <span className="text-muted-foreground">{weekdayNames[w.weekday]}</span>
-                  <span className="font-mono">{Math.round(w.avgTotal)}</span>
+          <div className="rounded-md border p-3 overflow-hidden">
+            <div className={cn('text-muted-foreground mb-1', compact ? 'text-[10px]' : 'text-[11px]')}>Suma wg dni tygodnia</div>
+            <div className={cn('grid grid-cols-3 gap-1 min-w-0', compact ? 'text-[10px]' : 'text-[11px]')}>
+              {(data?.weekdayTotals?.length ? data.weekdayTotals : data?.weekdayAverages?.map(a => ({ weekday: a.weekday, total: a.avgTotal })) ?? [])
+                .map((w: { weekday: number; total: number }) => (
+                <div key={w.weekday} className="flex items-center justify-between bg-muted/40 rounded px-1.5 py-0.5 min-w-0 gap-1">
+                  <span className="text-muted-foreground truncate">{weekdayNames[w.weekday]}</span>
+                  <span className={cn('font-mono flex-shrink-0', compact ? 'text-[10px]' : 'text-[11px]')}>{fmt(w.total)}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-md border p-3">
-            <div className="text-[11px] text-muted-foreground mb-1">Pokrycie danych</div>
-            <div className="text-xs space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Śr. wierszy/dzień</span>
-                <span className="font-mono">{Math.round(data?.coverage.avgRowsPerDay ?? 0)}</span>
+          <div className="rounded-md border p-3 overflow-hidden">
+            <div className={cn('text-muted-foreground mb-1', compact ? 'text-[10px]' : 'text-[11px]')}>Pokrycie danych</div>
+            <div className={cn('space-y-1 min-w-0', compact ? 'text-[10px]' : 'text-xs')}>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-muted-foreground truncate">Śr. wierszy/dzień</span>
+                <span className="font-mono flex-shrink-0">{Math.round(data?.coverage.avgRowsPerDay ?? 0)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Dni ≥ {data?.coverage.threshold}</span>
-                <span className="font-mono">{data?.coverage.daysWithAtLeast ?? 0}</span>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <span className="text-muted-foreground truncate">Dni ≥ {data?.coverage.threshold}</span>
+                <span className="font-mono flex-shrink-0">{data?.coverage.daysWithAtLeast ?? 0}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-md border p-3">
+        <div className="mt-4 rounded-md border p-3 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] text-muted-foreground">Ostatnie sumy dzienne</div>
+            <div className={cn('text-muted-foreground', compact ? 'text-[10px]' : 'text-[11px]')}>Ostatnie sumy dzienne</div>
             <Sparkline values={data?.recentDailyTotals?.map(d => d.total) ?? []} />
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 min-w-0">
             {data?.recentDailyTotals?.map((d) => (
-              <div key={d.dateLocal} className="text-[11px] px-1.5 py-0.5 rounded bg-muted/50">
+              <div key={d.dateLocal} className={cn('px-1.5 py-0.5 rounded bg-muted/50', compact ? 'text-[10px]' : 'text-[11px]')}>
                 <span className="font-mono">{d.dateLocal}</span>
                 <span className="mx-1">•</span>
                 <span className="font-mono">{d.total}</span>
@@ -150,11 +157,11 @@ function fmtFloat(n: number | null | undefined) {
   return new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(n)
 }
 
-function Metric({ label, value, mono }: { label: string; value: string | number; mono?: boolean }) {
+function Metric({ label, value, mono, small }: { label: string; value: string | number; mono?: boolean; small?: boolean }) {
   return (
     <div className="space-y-1">
-      <div className="text-muted-foreground text-[11px]">{label}</div>
-      <div className={cn('text-sm', mono ? 'font-mono' : '')}>{value}</div>
+      <div className={cn('text-muted-foreground', small ? 'text-[10px]' : 'text-[11px]')}>{label}</div>
+      <div className={cn(mono ? 'font-mono' : '', small ? 'text-xs' : 'text-sm')}>{value}</div>
     </div>
   )
 }

@@ -10,6 +10,7 @@ export interface CampaignHistoricalSummary {
   avgDailyTotal: number | null
   medianDailyTotal: number | null
   weekdayAverages: { weekday: number; avgTotal: number }[]
+  weekdayTotals: { weekday: number; total: number }[]
   coverage: { avgRowsPerDay: number; daysWithAtLeast: number; threshold: number }
 }
 

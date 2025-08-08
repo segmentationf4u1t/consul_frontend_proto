@@ -9,6 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useScreenSize } from '@/hooks/use-mobile';
 import { CampaignPrediction } from '@/types/predictions';
+import { useMemo } from 'react';
+import { useCampaignSummaries } from '@/hooks/use-campaign-summaries';
 
 interface CampaignsTableProps {
   data: WallboardData | null;
@@ -19,6 +21,7 @@ interface CampaignsTableProps {
   predictions: Map<string, CampaignPrediction>; // TEMPORARILY DISABLED - was: Map<string, CampaignPrediction>
   predictionsLoading: boolean;
   showPredictions: boolean;
+  onRowClick?: (campaignName: string) => void;
 }
 
 const CampaignsTableSkeleton = () => (
@@ -77,8 +80,10 @@ const secondsToTimeString = (seconds: number): string => {
   }
 };
 
-export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions }: CampaignsTableProps) => {
+export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions, onRowClick }: CampaignsTableProps) => {
   const { isMobile, isTablet } = useScreenSize();
+  const campaignNames = useMemo(() => data?.campaigns?.map(c => c.kampanie) ?? [], [data?.campaigns])
+  const { summaries } = useCampaignSummaries(campaignNames)
   
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
@@ -133,7 +138,7 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Add total row at the end - cast to the expected table row type
     const dataWithTotal = [...extendedData, totalRow] as TableRowData[];
     
-    const tableColumns = columns({ showPredictions: showPredictions, isMobile, isTablet });
+    const tableColumns = columns({ showPredictions: showPredictions, isMobile, isTablet, summaries });
     return (
       <DataTable
         columns={tableColumns}
@@ -141,6 +146,10 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
         sorting={sorting}
         setSorting={setSorting}
         showPredictions={showPredictions}
+        onRowClick={(row) => {
+          const r = row as any as TableRowData;
+          if (!r.isTotal) onRowClick?.(r.kampanie);
+        }}
       />
     );
   }

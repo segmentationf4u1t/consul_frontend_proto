@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   sorting: SortingState
   setSorting: React.Dispatch<React.SetStateAction<SortingState>>
   showPredictions?: boolean
+  onRowClick?: (row: TData) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   sorting,
   setSorting,
   showPredictions = false,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -82,11 +84,12 @@ export function DataTable<TData, TValue>({
         <div className="grid gap-3 p-4">
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <CampaignCard
-                key={row.id}
-                campaign={row.original as any}
-                showPredictions={showPredictions}
-              />
+              <div key={row.id} onClick={() => onRowClick && onRowClick(row.original as any)}>
+                <CampaignCard
+                  campaign={row.original as any}
+                  showPredictions={showPredictions}
+                />
+              </div>
             ))
           ) : (
             <div className="text-center py-8 text-muted-foreground">
@@ -138,7 +141,8 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={(row.original as TableRowData)?.isTotal ? "bg-muted/30 font-medium" : ""}
+                    className={(row.original as TableRowData)?.isTotal ? "bg-muted/30 font-medium" : "cursor-pointer hover:bg-muted/30"}
+                    onClick={() => onRowClick && onRowClick(row.original as any)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

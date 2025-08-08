@@ -27,6 +27,10 @@ import {
 import { revalidateHistorical, revalidatePredictions } from '@/lib/api-revalidate';
 import { TotalCallsChart } from '@/components/bot/TotalCallsChart';
 import HistoricalSummary from '@/components/bot/HistoricalSummary';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer';
+import type { CampaignHistoricalSummary as Summary } from '@/types/historical';
+import { SlaKpiPanel } from '@/components/bot/SlaKpiPanel';
+import { CampaignVarianceMini } from '@/components/bot/CampaignVarianceMini';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'stalled' | 'error';
 
@@ -45,6 +49,36 @@ export default function BotPage() {
   
   const { predictions, isLoading: predictionsLoading } = usePredictions(energaData?.campaigns);
   const [timeRange, setTimeRange] = useLocalStorage<'1h' | '6h' | '24h' | 'all'>('historicalTimeRange', '6h');
+
+  // Drilldown state
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Client-side buffer of recent totals per campaign for sparkline
+  const [recentBuffer, setRecentBuffer] = useState<Record<string, Array<{ ts: number; total: number }>>>({});
+  const [selectedSummary, setSelectedSummary] = useState<Summary | null>(null);
+  const weekdayNames = ['Nd','Pn','Wt','Śr','Cz','Pt','So'];
+  function SparklineInline({ values }: { values: number[] }) {
+    if (!values || values.length === 0) return null;
+    const width = 160;
+    const height = 36;
+    const padding = 4;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const step = (width - padding * 2) / Math.max(1, values.length - 1);
+    const points = values
+      .map((v, i) => {
+        const x = padding + i * step;
+        const y = height - padding - ((v - min) / range) * (height - padding * 2);
+        return `${x},${y}`;
+      })
+      .join(' ');
+    return (
+      <svg width={width} height={height} aria-hidden className="text-muted-foreground/60">
+        <polyline fill="none" stroke="currentColor" strokeWidth="1.5" points={points} />
+      </svg>
+    );
+  }
 
   const resetStallTimer = useCallback(() => {
     if (stallTimeoutRef.current) {
@@ -75,6 +109,17 @@ export default function BotPage() {
       }
       if (data.energa) {
         setEnergaData(data.energa);
+        // Update recent buffer totals per campaign
+        const ts = Date.now();
+        const nextBuf: Record<string, Array<{ ts: number; total: number }>> = { ...recentBuffer };
+        for (const c of data.energa.campaigns ?? []) {
+          const arr = nextBuf[c.kampanie] ? [...nextBuf[c.kampanie]] : [];
+          arr.push({ ts, total: c.polaczenia ?? 0 });
+          // Keep last 60 samples (~15 min if 15s SSE)
+          while (arr.length > 60) arr.shift();
+          nextBuf[c.kampanie] = arr;
+        }
+        setRecentBuffer(nextBuf);
       }
       setLastRefresh(new Date());
       setIsInitialLoading(false);
@@ -156,7 +201,7 @@ export default function BotPage() {
         title={
           <div className="flex items-center justify-center gap-2">
             <span className="truncate">Wallboard</span>
-            <span className="text-xs text-muted-foreground">— Dashboard</span>
+            <span className="text-xs text-muted-foreground">— Pulpit</span>
           </div>
         }
         trailing={
@@ -244,6 +289,7 @@ export default function BotPage() {
           </section>
       
           <section className="space-y-4">
+            <SlaKpiPanel data={energaData} />
             <CampaignsTable
               data={energaData}
               sorting={sorting}
@@ -253,10 +299,11 @@ export default function BotPage() {
               predictions={predictions}
               predictionsLoading={predictionsLoading}
               showPredictions={showPredictions}
+              onRowClick={(name) => { setSelectedCampaign(name); setSelectedSummary(null); setIsDrawerOpen(true); }}
             />
 
             {showPredictions && (
-              <div className="flex">
+              <div className="flex gap-4">
                 <div className="w-80">
                   <ProphetIndicator />
                 </div>
@@ -275,7 +322,67 @@ export default function BotPage() {
               </div>
             </div>
           </section>
-          <HistoricalSummary campaign="Tip_Ogolna_PL" />
+          
+
+          {/* Drilldown Drawer */}
+          <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction="right">
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>{selectedCampaign ?? ''}</DrawerTitle>
+                <DrawerDescription>Szczegóły kampanii</DrawerDescription>
+              </DrawerHeader>
+              <div className="p-4 space-y-4">
+                {selectedCampaign && (
+                  <>
+                    {/* Recent sparkline from client buffer */}
+                    <div className="rounded-md border p-3">
+                      <div className="text-[11px] text-muted-foreground mb-1">Ostatnie aktualizacje</div>
+                      <SparklineInline values={(recentBuffer[selectedCampaign] ?? []).map(v => v.total)} />
+                    </div>
+                    {/* Forecast variance mini chart */}
+                    <div className="rounded-md border p-3">
+                      <CampaignVarianceMini campaign={selectedCampaign} />
+                    </div>
+                    {/* Best weekday and last 7 days */}
+                    {selectedSummary && (
+                      <div className="rounded-md border p-3">
+                        <div className="grid grid-cols-1 gap-3 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Najlepszy dzień tygodnia</span>
+                            {(() => {
+                              const arr = (selectedSummary.weekdayTotals?.length ? selectedSummary.weekdayTotals : selectedSummary.weekdayAverages?.map(a => ({ weekday: a.weekday, total: a.avgTotal })) ?? []);
+                              if (!arr.length) return <span className="font-mono">—</span>;
+                              const best = arr.reduce((m, x) => x.total > m.total ? x : m, arr[0]);
+                              return <span className="font-mono">{weekdayNames[best.weekday]} • {Math.round(best.total)}</span>;
+                            })()}
+                          </div>
+                          <div>
+                            <div className="text-[11px] text-muted-foreground mb-1">Ostatnie 7 dni</div>
+                            <div className="flex flex-wrap gap-1">
+                              {(selectedSummary.recentDailyTotals ?? []).map((d) => (
+                                <div key={d.dateLocal} className="text-[11px] px-1.5 py-0.5 rounded bg-muted/50">
+                                  <span className="font-mono">{d.dateLocal}</span>
+                                  <span className="mx-1">•</span>
+                                  <span className="font-mono">{d.total}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Historical summary for selected campaign */}
+                    <HistoricalSummary campaign={selectedCampaign} onSummaryLoaded={setSelectedSummary} />
+                  </>
+                )}
+              </div>
+              <div className="p-4 pt-0">
+                <DrawerClose asChild>
+                  <Button variant="secondary" className="w-full">Zamknij</Button>
+                </DrawerClose>
+              </div>
+            </DrawerContent>
+          </Drawer>
 
           {showDebugInfo && (
             <section>

@@ -3,6 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { CampaignData } from "@/types/wallboard"
 import { CampaignPrediction } from "@/types/predictions"
+import type { CampaignHistoricalSummary as Summary } from "@/types/historical"
+import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,9 +38,10 @@ interface ColumnsOptions {
   showPredictions: boolean;
   isMobile?: boolean;
   isTablet?: boolean;
+  summaries?: Map<string, Summary>;
 }
 
-export const columns = ({ showPredictions, isMobile = false, isTablet = false }: ColumnsOptions): ColumnDef<TableRowData>[] => {
+export const columns = ({ showPredictions, isMobile = false, isTablet = false, summaries }: ColumnsOptions): ColumnDef<TableRowData>[] => {
   // Define all possible columns
   const allColumns: ColumnDef<TableRowData>[] = [
     {
@@ -59,6 +62,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const kampanie = row.getValue("kampanie") as string;
         const zalogowani = row.getValue("zalogowani") as number;
         const isTotal = row.original.isTotal;
+        const summary = summaries?.get(kampanie);
         
         // Special styling for TOTAL row
         if (isTotal) {
@@ -80,6 +84,22 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         const isTipCampaign = kampanie === 'TIP_Ogolna_PL';
         const showWarning = isTipCampaign && zalogowani === 1 && isWorkingHours;
 
+        const badge = (() => {
+          if (!summary) return null
+          const coverage = summary.coverage
+          const days = summary.daysTracked
+          const fresh = summary.newestUTC ? (Date.now() - new Date(summary.newestUTC).getTime()) / (1000 * 60) : Infinity
+          const good = coverage.avgRowsPerDay >= 240 && fresh <= 30
+          const warn = coverage.avgRowsPerDay >= 180 && fresh <= 120
+          const label = fresh === Infinity ? 'brak' : fresh < 60 ? `${Math.round(fresh)}m` : `${Math.round(fresh/60)}h`
+          const klass = good ? 'bg-green-500/15 text-green-600 border-green-600/30' : warn ? 'bg-yellow-500/15 text-yellow-700 border-yellow-600/30' : 'bg-destructive/10 text-destructive border-destructive/30'
+          return (
+            <span className={cn('px-1.5 py-0.5 rounded border text-[10px] leading-none', klass)} title={`Pokrycie ~${Math.round(coverage.avgRowsPerDay)} wierszy/dzień, świeżość ${label}`}>
+              {label}
+            </span>
+          )
+        })()
+
         return (
           <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
             {zalogowani === 0 && <div className="h-4 w-1 rounded-full bg-destructive animate-pulse" />}
@@ -99,6 +119,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
             )}
 
             <span className="truncate">{kampanie}</span>
+            {badge}
           </div>
         )
       },
@@ -173,10 +194,15 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
       cell: ({ row }) => {
         const kolejka = row.getValue("kolejka") as number | null;
         const isTotal = row.original.isTotal;
-   
+        const kampanie = row.getValue("kampanie") as string;
+        let icon: JSX.Element | null = null;
+        if (!isTotal && typeof kolejka === 'number' && kolejka >= 10) {
+          icon = <span title="Wysoka kolejka" className="ml-1 text-yellow-600">▲</span>
+        }
         return (
-          <div className={`${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
+          <div className={`flex items-center gap-1 ${isTotal ? 'font-bold text-foreground' : 'text-foreground'} ${isMobile ? 'text-xs' : ''}`}>
             {kolejka !== null ? kolejka : ''}
+            {icon}
           </div>
         )
       },
@@ -225,6 +251,8 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("odebranePercent"))
         const isTotal = row.original.isTotal;
+        const kampanie = row.getValue("kampanie") as string;
+        const warnIcon = !isTotal && amount < 70 ? (<span title="Spadek % odebranych" className="ml-1 text-destructive">▼</span>) : null
         
         // Color coding based on performance - using shadcn theme colors
         const getTextColor = (percent: number) => {
@@ -243,8 +271,9 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false }:
         }
         
         return (
-          <div className={`font-medium ${getTextColor(amount)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
-            {`${amount}%`}
+          <div className={`flex items-center ${getTextColor(amount)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            <span className="font-medium">{`${amount}%`}</span>
+            {warnIcon}
           </div>
         );
       },
