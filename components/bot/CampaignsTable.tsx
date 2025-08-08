@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { memo, Dispatch, SetStateAction } from 'react';
 import { WallboardData } from '@/types/wallboard';
@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useScreenSize } from '@/hooks/use-mobile';
 import { CampaignPrediction } from '@/types/predictions';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useCampaignSummaries } from '@/hooks/use-campaign-summaries';
 
 interface CampaignsTableProps {
@@ -82,8 +82,18 @@ const secondsToTimeString = (seconds: number): string => {
 
 export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoading, error, predictions, predictionsLoading, showPredictions, onRowClick }: CampaignsTableProps) => {
   const { isMobile, isTablet } = useScreenSize();
-  const campaignNames = useMemo(() => data?.campaigns?.map(c => c.kampanie) ?? [], [data?.campaigns])
-  const { summaries } = useCampaignSummaries(campaignNames)
+  const campaignNames = useMemo(() => data?.campaigns?.map(c => c.kampanie) ?? [], [data?.campaigns]);
+  const { summaries, refetch } = useCampaignSummaries(campaignNames, { refreshMs: 60_000 });
+
+  // Throttle on-SSE refresh of summaries for better freshness without spamming the server
+  const lastRefetchAtRef = useRef<number>(0);
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastRefetchAtRef.current > 120_000) { // at most every 2 minutes on new SSE data
+      lastRefetchAtRef.current = now;
+      refetch();
+    }
+  }, [data?.campaigns, refetch]);
   
   if (isInitialLoading) {
     return <CampaignsTableSkeleton />;
