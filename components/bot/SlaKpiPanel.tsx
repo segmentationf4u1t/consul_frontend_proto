@@ -41,8 +41,8 @@ export const SlaKpiPanel = memo(({ data, className }: SlaKpiPanelProps) => {
     const answerRate = totalPolaczenia > 0 ? (totalOdebrane / totalPolaczenia) * 100 : 0
     const abandonRate = 100 - answerRate
 
-    // Simple SL 80/20 proxy: pass if ASA <= 20s and answer rate >= 80%
-    const slTargetSeconds = 20
+    // Simple SL 80/30 proxy: pass if ASA <= 30s and answer rate >= 80%
+    const slTargetSeconds = 30
     const slTargetAnswerPct = 80
     const slPass = asaSeconds <= slTargetSeconds && answerRate >= slTargetAnswerPct
 

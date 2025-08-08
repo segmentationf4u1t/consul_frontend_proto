@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { API_BASE_URL } from '@/lib/api-config'
+import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import type { CampaignHistoricalSummary as Summary } from '@/types/historical'
 
 interface UseCampaignSummariesOptions {
@@ -23,7 +23,7 @@ export function useCampaignSummaries(campaigns?: string[], options?: UseCampaign
     try {
       const results = await Promise.allSettled(
         toFetch.map(async (c) => {
-          const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(c)}`)
+          const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(c)}`, withAuth())
           if (!res.ok) throw new Error('Failed summary')
           const json = (await res.json()) as Summary
           return { campaign: c, summary: json }

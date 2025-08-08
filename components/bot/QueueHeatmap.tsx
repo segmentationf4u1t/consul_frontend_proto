@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { API_BASE_URL } from '@/lib/api-config'
+import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import { cn } from '@/lib/utils'
 import { formatInTimeZone } from 'date-fns-tz'
 import { pl } from 'date-fns/locale'
@@ -50,7 +50,7 @@ export function QueueHeatmap({ className, days = 14 }: QueueHeatmapProps) {
       let pageCount = 0
 
       do {
-        const res = await fetch(url)
+        const res = await fetch(url, withAuth())
         if (!res.ok) throw new Error(`Failed to fetch (status ${res.status})`)
         const page: PanelsPage = await res.json()
 

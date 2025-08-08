@@ -41,7 +41,11 @@ export default function BotPage() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource(`${API_BASE_URL}/wallboard/events`);
+    const token = process.env.NEXT_PUBLIC_API_BEARER_TOKEN;
+    const sseUrl = token
+      ? `${API_BASE_URL}/wallboard/events?token=${encodeURIComponent(token)}`
+      : `${API_BASE_URL}/wallboard/events`;
+    const eventSource = new EventSource(sseUrl);
 
     eventSource.onopen = () => {
       setConnectionStatus('connected');

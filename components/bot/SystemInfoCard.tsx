@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Activity, Cpu, MemoryStick, HardDrive, Database } from 'lucide-react';
 import { SystemInfo } from '@/types/system';
-import { API_BASE_URL } from '@/lib/api-config';
+import { API_BASE_URL, withAuth } from '@/lib/api-config';
 
 interface SystemInfoCardProps {
   className?: string;
@@ -19,7 +19,7 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
 
   const fetchSystemInfo = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/system/info`);
+      const response = await fetch(`${API_BASE_URL}/system/info`, withAuth());
       if (!response.ok) {
         throw new Error('Failed to fetch system info');
       }
@@ -37,9 +37,7 @@ export function SystemInfoCard({ className = '' }: SystemInfoCardProps) {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/system/info/refresh`, {
-        method: 'POST'
-      });
+      const response = await fetch(`${API_BASE_URL}/system/info/refresh`, withAuth({ method: 'POST' }));
       if (!response.ok) {
         throw new Error('Failed to refresh system info');
       }

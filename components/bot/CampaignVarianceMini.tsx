@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { API_BASE_URL } from '@/lib/api-config'
+import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import type { CampaignPredictionVariance } from '@/types/predictions'
 
 function MiniOverlay({ days }: { days: { day: string; predicted: number; actual: number }[] }) {
@@ -35,7 +35,7 @@ export function CampaignVarianceMini({ campaign }: { campaign: string }) {
     const load = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`${API_BASE_URL}/predictions/variance/${encodeURIComponent(campaign)}`)
+        const res = await fetch(`${API_BASE_URL}/predictions/variance/${encodeURIComponent(campaign)}`, withAuth())
         if (!res.ok) throw new Error('Failed to load variance')
         const json = (await res.json()) as CampaignPredictionVariance
         if (!cancelled) setData(json)

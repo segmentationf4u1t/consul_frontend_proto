@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CampaignPrediction } from '@/types/predictions';
 import { CampaignData } from '@/types/wallboard';
 
-import { API_BASE_URL } from '@/lib/api-config';
+import { API_BASE_URL, withAuth } from '@/lib/api-config';
 
 export const usePredictions = (campaigns: CampaignData[] | undefined) => {
   const [predictions, setPredictions] = useState<Map<string, CampaignPrediction>>(new Map());
@@ -12,7 +12,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
 
   const fetchPrediction = useCallback(async (campaignName: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
+      const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}` , withAuth());
       if (!response.ok) {
         throw new Error(`Prediction fetch failed with status: ${response.status}`);
       }
@@ -40,7 +40,7 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
 
       try {
         const promises = campaignNames.map(async (campaignName) => {
-          const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`);
+          const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`, withAuth());
           if (!response.ok) {
             throw new Error(`Prediction fetch failed with status: ${response.status}`);
           }

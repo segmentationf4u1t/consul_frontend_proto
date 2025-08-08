@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { GlobalForecastHealth } from '@/types/predictions'
-import { API_BASE_URL } from '@/lib/api-config'
+import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import { cn } from '@/lib/utils'
 
 function valueClass(mape: number | null | undefined): string {
@@ -24,7 +24,7 @@ export function ForecastHealth({ className }: { className?: string }) {
     const load = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`${API_BASE_URL}/predictions/variance`)
+        const res = await fetch(`${API_BASE_URL}/predictions/variance`, withAuth())
         if (!res.ok) throw new Error('Failed to load forecast health')
         const json = (await res.json()) as GlobalForecastHealth
         if (!cancelled) setData(json)

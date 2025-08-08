@@ -29,3 +29,12 @@ export function getApiBaseUrl(): string {
 }
 
 export const API_BASE_URL = getApiBaseUrl();
+
+// Public-exposed bearer for client requests (dev/internal use only)
+export const API_BEARER = process.env.NEXT_PUBLIC_API_BEARER_TOKEN;
+
+export function withAuth(init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers as HeadersInit);
+  if (API_BEARER) headers.set('Authorization', `Bearer ${API_BEARER}`);
+  return { ...(init ?? {}), headers };
+}

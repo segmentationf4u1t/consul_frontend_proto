@@ -4,7 +4,7 @@ import { memo, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { API_BASE_URL } from '@/lib/api-config';
+import { API_BASE_URL, withAuth } from '@/lib/api-config';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProphetIndicatorProps {
@@ -50,7 +50,7 @@ export const ProphetIndicator = memo(({ className }: ProphetIndicatorProps) => {
     let cancelled = false;
     const fetchMeta = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/predictions/meta`);
+        const res = await fetch(`${API_BASE_URL}/predictions/meta`, withAuth());
         const meta = await res.json();
         if (cancelled) return;
         setModelType(typeof meta.modelType === 'string' ? meta.modelType : null);

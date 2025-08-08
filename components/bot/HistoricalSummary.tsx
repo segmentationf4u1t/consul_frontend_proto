@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { API_BASE_URL } from '@/lib/api-config'
+import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import { cn } from '@/lib/utils'
 import type { CampaignHistoricalSummary as Summary } from '@/types/historical'
 
@@ -27,7 +27,7 @@ export default function HistoricalSummary({ campaign, className, onSummaryLoaded
     const fetchSummary = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(campaign)}`)
+        const res = await fetch(`${API_BASE_URL}/historical/campaigns/summary/${encodeURIComponent(campaign)}`, withAuth())
         if (!res.ok) throw new Error('Failed to load summary')
         const json = (await res.json()) as Summary
         if (!cancelled) {

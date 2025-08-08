@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { subHours } from 'date-fns';
-import { API_BASE_URL } from '@/lib/api-config';
+import { API_BASE_URL, withAuth } from '@/lib/api-config';
 import { formatInTimeZone } from 'date-fns-tz';
 import { pl } from 'date-fns/locale';
 
@@ -110,7 +110,7 @@ export function HistoricalChart({ className, timeRange, onTimeRangeChange }: His
       let pageCount = 0;
 
       do {
-        const res = await fetch(url);
+        const res = await fetch(url, withAuth());
         if (!res.ok) throw new Error(`Failed to fetch historical data (status ${res.status})`);
         const page: PanelsPage = await res.json();
 
