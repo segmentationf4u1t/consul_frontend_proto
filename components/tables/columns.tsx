@@ -7,7 +7,6 @@ import { CampaignPrediction } from "@/types/predictions"
 import type { CampaignHistoricalSummary as Summary } from "@/types/historical"
 import { cn } from "@/lib/utils"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
@@ -85,21 +84,8 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
         const isTipCampaign = kampanie === 'TIP_Ogolna_PL';
         const showWarning = isTipCampaign && zalogowani === 1 && isWorkingHours;
 
-        const badge = (() => {
-          if (!summary) return null
-          const coverage = summary.coverage
-          const days = summary.daysTracked
-          const fresh = summary.newestUTC ? (Date.now() - new Date(summary.newestUTC).getTime()) / (1000 * 60) : Infinity
-          const good = coverage.avgRowsPerDay >= 240 && fresh <= 30
-          const warn = coverage.avgRowsPerDay >= 180 && fresh <= 120
-          const label = fresh === Infinity ? 'brak' : fresh < 60 ? `${Math.round(fresh)}m` : `${Math.round(fresh/60)}h`
-          const klass = good ? 'bg-green-500/15 text-green-600 border-green-600/30' : warn ? 'bg-yellow-500/15 text-yellow-700 border-yellow-600/30' : 'bg-destructive/10 text-destructive border-destructive/30'
-          return (
-            <span className={cn('px-1.5 py-0.5 rounded border text-[10px] leading-none', klass)} title={`Pokrycie ~${Math.round(coverage.avgRowsPerDay)} wierszy/dzień, świeżość ${label}`}>
-              {label}
-            </span>
-          )
-        })()
+        // Coverage freshness badge disabled (redundant per request)
+        const badge = null
 
         return (
           <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
@@ -120,7 +106,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
             )}
 
             <span className="truncate">{kampanie}</span>
-            {badge}
+            {/* {badge} */}
           </div>
         )
       },

@@ -10,6 +10,7 @@ import { subHours } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { pl } from 'date-fns/locale';
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { PhoneCall } from 'lucide-react';
 
 const timeZone = 'Europe/Warsaw';
 const MAX_WINDOW_HOURS = 48;
@@ -247,7 +248,10 @@ const renderDomain = useMemo<[number, number]>(() => {
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Połączenia (suma)</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PhoneCall className="h-4 w-4 text-muted-foreground" />
+            Połączenia (suma)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -266,7 +270,10 @@ const renderDomain = useMemo<[number, number]>(() => {
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle>Połączenia (suma)</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PhoneCall className="h-4 w-4 text-muted-foreground" />
+            Połączenia (suma)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -281,7 +288,10 @@ const renderDomain = useMemo<[number, number]>(() => {
     <Card className={className}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle>Połączenia (suma)</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <PhoneCall className="h-4 w-4 text-muted-foreground" />
+            Połączenia (suma)
+          </CardTitle>
           <div className="flex items-center gap-2">
             {refreshing && <Badge variant="secondary" className="text-xs">Aktualizuję…</Badge>}
           </div>

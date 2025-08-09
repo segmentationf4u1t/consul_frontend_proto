@@ -66,30 +66,30 @@ export const SlaKpiPanel = memo(({ data, className }: SlaKpiPanelProps) => {
     <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-3 text-xs', className)}>
       <Card className={kpiClass(KPIs.asaSeconds <= KPIs.slTargetSeconds, KPIs.asaSeconds <= KPIs.slTargetSeconds + 10)}>
         <CardContent className="p-3">
-          <div className="text-[11px] text-muted-foreground">ASA</div>
+          <div className="text-[11px] text-muted-foreground">Czas oczekiwania</div>
           <div className="text-sm font-semibold">{secondsToClock(KPIs.asaSeconds)}</div>
           <div className="text-[10px] text-muted-foreground">cel ≤ {secondsToClock(KPIs.slTargetSeconds)}</div>
         </CardContent>
       </Card>
       <Card className={kpiClass(KPIs.slPass, !KPIs.slPass && KPIs.answerRate >= KPIs.slTargetAnswerPct - 5)}>
         <CardContent className="p-3">
-          <div className="text-[11px] text-muted-foreground">SL 80/20 (proxy)</div>
+          <div className="text-[11px] text-muted-foreground">SL 80/30</div>
           <div className="text-sm font-semibold">{KPIs.slPass ? 'OK' : 'Ryzyko'}</div>
-          <div className="text-[10px] text-muted-foreground">ASA ≤ {KPIs.slTargetSeconds}s & odpowiedzi ≥ {KPIs.slTargetAnswerPct}%</div>
+          <div className="text-[10px] text-muted-foreground">Czas oczekiwania ≤ {KPIs.slTargetSeconds}s & odebrane ≥ {KPIs.slTargetAnswerPct}%</div>
         </CardContent>
       </Card>
       <Card className={kpiClass(KPIs.answerRate >= KPIs.slTargetAnswerPct, KPIs.answerRate >= KPIs.slTargetAnswerPct - 5)}>
         <CardContent className="p-3">
-          <div className="text-[11px] text-muted-foreground">Odpowiedziane</div>
+          <div className="text-[11px] text-muted-foreground">Odebrane połączenia %</div>
           <div className="text-sm font-semibold">{KPIs.answerRate.toFixed(1)}%</div>
           <div className="text-[10px] text-muted-foreground">cel ≥ {KPIs.slTargetAnswerPct}%</div>
         </CardContent>
       </Card>
       <Card className={kpiClass(KPIs.abandonRate <= 5, KPIs.abandonRate <= 10)}>
         <CardContent className="p-3">
-          <div className="text-[11px] text-muted-foreground">Porzucone (szac.)</div>
+          <div className="text-[11px] text-muted-foreground">Zignorowane połączenia %</div>
           <div className="text-sm font-semibold">{Math.max(0, KPIs.abandonRate).toFixed(1)}%</div>
-          <div className="text-[10px] text-muted-foreground">niżej = lepiej</div>
+          <div className="text-[10px] text-muted-foreground">Cel ≤ 5%</div>
         </CardContent>
       </Card>
     </div>

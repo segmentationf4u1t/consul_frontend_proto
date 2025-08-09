@@ -270,8 +270,11 @@ export const MetricCards = memo(({ data, animationsEnabled, isInitialLoading, er
     );
   }
 
-  const breakThreshold = data.zalogowani ? data.zalogowani * 0.1 : 0;
-  const showBreakWarning = data.przerwa ? data.przerwa > breakThreshold : false;
+  const loggedIn = Number(data.zalogowani) || 0;
+  const baseThreshold = Math.floor(loggedIn * 0.1);
+  const allowedBreak = loggedIn >= 10 ? baseThreshold : (loggedIn > 0 ? 1 : 0);
+  const currentBreak = Number(data.przerwa) || 0;
+  const showBreakWarning = currentBreak > allowedBreak;
 
   const queue = data.kolejka || 0;
   const queueIntensity = queue > 7 ? Math.min(1, (queue - 7) / 8) : 0; // 7→0, 15+→1
@@ -285,8 +288,8 @@ export const MetricCards = memo(({ data, animationsEnabled, isInitialLoading, er
       <MetricCard label="Nieobsłużone" value={data.nieobsluzone || 0} animationsEnabled={animationsEnabled} />
       <MetricCard 
         label="Przerwa" 
-        value={data.przerwa || 0} 
-        indicator={{ show: showBreakWarning, tooltip: `Liczba osób na przerwie przekracza 10% zalogowanych (${Math.floor(breakThreshold)}).` }}
+        value={currentBreak} 
+        indicator={{ show: showBreakWarning, tooltip: `Liczba osób na przerwie przekracza dopuszczalny limit (${allowedBreak}).` }}
         animationsEnabled={animationsEnabled}
       />
     </div>
