@@ -10,6 +10,14 @@ interface SlaKpiPanelProps {
   className?: string
 }
 
+// Targets and thresholds
+const SL_TARGET_SECONDS = 30
+const SL_TARGET_ANSWER_PCT = 80
+const ASA_WARN_DELTA = 10
+const ANSWER_WARN_DELTA = 5
+const ABANDON_GOOD_PCT = 5
+const ABANDON_WARN_PCT = 10
+
 function timeStringToSeconds(timeStr: string | undefined): number {
   if (!timeStr || timeStr === '0' || timeStr === '-') return 0
   const parts = timeStr.split(':').map(p => parseInt(p, 10) || 0)
@@ -29,30 +37,43 @@ function secondsToClock(seconds: number): string {
 export const SlaKpiPanel = memo(({ data, className }: SlaKpiPanelProps) => {
   const KPIs = useMemo(() => {
     const campaigns: CampaignData[] = data?.campaigns ?? []
-    const totalPolaczenia = campaigns.reduce((sum, c) => sum + (c.polaczenia || 0), 0)
-    const totalOdebrane = campaigns.reduce((sum, c) => sum + (c.odebrane || 0), 0)
 
-    // Weighted ASA by total calls offered (polaczenia)
-    const totalWaitWeightedSeconds = campaigns.reduce(
-      (sum, c) => sum + timeStringToSeconds(c.czasOczekiwania) * (c.polaczenia || 0),
-      0
-    )
+    let totalPolaczenia = 0
+    let totalOdebrane = 0
+    let totalWaitWeightedSeconds = 0
+
+    for (const c of campaigns) {
+      const calls = c.polaczenia || 0
+      const answered = c.odebrane || 0
+      totalPolaczenia += calls
+      totalOdebrane += answered
+      if (calls > 0) totalWaitWeightedSeconds += timeStringToSeconds(c.czasOczekiwania) * calls
+    }
+
     const asaSeconds = totalPolaczenia > 0 ? totalWaitWeightedSeconds / totalPolaczenia : 0
     const answerRate = totalPolaczenia > 0 ? (totalOdebrane / totalPolaczenia) * 100 : 0
-    const abandonRate = 100 - answerRate
+    const abandonRate = Math.max(0, 100 - answerRate)
 
-    // Simple SL 80/30 proxy: pass if ASA <= 30s and answer rate >= 80%
-    const slTargetSeconds = 30
-    const slTargetAnswerPct = 80
-    const slPass = asaSeconds <= slTargetSeconds && answerRate >= slTargetAnswerPct
+    const isAverageWaitWithinTarget = asaSeconds <= SL_TARGET_SECONDS
+    const isAnswerRateWithinTarget = answerRate >= SL_TARGET_ANSWER_PCT
+    const slPass = isAverageWaitWithinTarget && isAnswerRateWithinTarget
+
+    const slStatusText = slPass
+      ? 'OK'
+      : !isAverageWaitWithinTarget && isAnswerRateWithinTarget
+        ? 'Czas oczekiwania do poprawy'
+        : isAverageWaitWithinTarget && !isAnswerRateWithinTarget
+          ? 'Odebrane do poprawy'
+          : 'Czas oczekiwania i odebrane do poprawy'
 
     return {
       asaSeconds,
       answerRate,
       abandonRate,
       slPass,
-      slTargetSeconds,
-      slTargetAnswerPct
+      slStatusText,
+      slTargetSeconds: SL_TARGET_SECONDS,
+      slTargetAnswerPct: SL_TARGET_ANSWER_PCT
     }
   }, [data])
 
@@ -64,7 +85,7 @@ export const SlaKpiPanel = memo(({ data, className }: SlaKpiPanelProps) => {
 
   return (
     <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-3 text-xs', className)}>
-      <Card className={kpiClass(KPIs.asaSeconds <= KPIs.slTargetSeconds, KPIs.asaSeconds <= KPIs.slTargetSeconds + 10)}>
+      <Card className={kpiClass(KPIs.asaSeconds <= KPIs.slTargetSeconds, KPIs.asaSeconds <= KPIs.slTargetSeconds + ASA_WARN_DELTA)}>
         <CardContent className="p-3">
           <div className="text-[11px] text-muted-foreground">Czas oczekiwania</div>
           <div className="text-sm font-semibold">{secondsToClock(KPIs.asaSeconds)}</div>
@@ -74,22 +95,22 @@ export const SlaKpiPanel = memo(({ data, className }: SlaKpiPanelProps) => {
       <Card className={kpiClass(KPIs.slPass, !KPIs.slPass && KPIs.answerRate >= KPIs.slTargetAnswerPct - 5)}>
         <CardContent className="p-3">
           <div className="text-[11px] text-muted-foreground">SL 80/30</div>
-          <div className="text-sm font-semibold">{KPIs.slPass ? 'OK' : 'Ryzyko'}</div>
+          <div className="text-sm font-semibold">{KPIs.slStatusText}</div>
           <div className="text-[10px] text-muted-foreground">Czas oczekiwania ≤ {KPIs.slTargetSeconds}s & odebrane ≥ {KPIs.slTargetAnswerPct}%</div>
         </CardContent>
       </Card>
-      <Card className={kpiClass(KPIs.answerRate >= KPIs.slTargetAnswerPct, KPIs.answerRate >= KPIs.slTargetAnswerPct - 5)}>
+      <Card className={kpiClass(KPIs.answerRate >= KPIs.slTargetAnswerPct, KPIs.answerRate >= KPIs.slTargetAnswerPct - ANSWER_WARN_DELTA)}>
         <CardContent className="p-3">
           <div className="text-[11px] text-muted-foreground">Odebrane połączenia %</div>
           <div className="text-sm font-semibold">{KPIs.answerRate.toFixed(1)}%</div>
           <div className="text-[10px] text-muted-foreground">cel ≥ {KPIs.slTargetAnswerPct}%</div>
         </CardContent>
       </Card>
-      <Card className={kpiClass(KPIs.abandonRate <= 5, KPIs.abandonRate <= 10)}>
+      <Card className={kpiClass(KPIs.abandonRate <= ABANDON_GOOD_PCT, KPIs.abandonRate <= ABANDON_WARN_PCT)}>
         <CardContent className="p-3">
           <div className="text-[11px] text-muted-foreground">Zignorowane połączenia %</div>
-          <div className="text-sm font-semibold">{Math.max(0, KPIs.abandonRate).toFixed(1)}%</div>
-          <div className="text-[10px] text-muted-foreground">Cel ≤ 5%</div>
+          <div className="text-sm font-semibold">{KPIs.abandonRate.toFixed(1)}%</div>
+          <div className="text-[10px] text-muted-foreground">Cel ≤ {ABANDON_GOOD_PCT}%</div>
         </CardContent>
       </Card>
     </div>
