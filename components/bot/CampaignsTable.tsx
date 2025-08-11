@@ -9,8 +9,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useScreenSize } from '@/hooks/use-mobile';
 import { CampaignPrediction } from '@/types/predictions';
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useCampaignSummaries } from '@/hooks/use-campaign-summaries';
+import { generatePrediction } from '@/lib/api-predictions';
+import { toast } from 'sonner';
+import { usePredictions } from '@/hooks/use-predictions';
 
 interface CampaignsTableProps {
   data: WallboardData | null;
@@ -84,6 +87,8 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
   const { isMobile, isTablet } = useScreenSize();
   const campaignNames = useMemo(() => data?.campaigns?.map(c => c.kampanie) ?? [], [data?.campaigns]);
   const { summaries, refetch } = useCampaignSummaries(campaignNames, { refreshMs: 60_000 });
+  const { refreshPrediction } = usePredictions(undefined);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   // Throttle on-SSE refresh of summaries for better freshness without spamming the server
   const lastRefetchAtRef = useRef<number>(0);
@@ -148,7 +153,24 @@ export const CampaignsTable = memo(({ data, sorting, setSorting, isInitialLoadin
     // Add total row at the end - cast to the expected table row type
     const dataWithTotal = [...extendedData, totalRow] as TableRowData[];
     
-    const tableColumns = columns({ showPredictions: showPredictions, isMobile, isTablet, summaries });
+    const tableColumns = columns({ 
+      showPredictions: showPredictions, 
+      isMobile, 
+      isTablet, 
+      summaries,
+      onGenerate: async (campaign) => {
+        try {
+          setGenerating(campaign);
+          await generatePrediction(campaign);
+          await refreshPrediction(campaign);
+          toast.success(`Wygenerowano prognozę dla ${campaign}`);
+        } catch (e: any) {
+          toast.error(`Nie udało się wygenerować prognozy: ${e?.message ?? 'Błąd'}`);
+        } finally {
+          setGenerating(null);
+        }
+      }
+    });
     return (
       <DataTable
         columns={tableColumns}

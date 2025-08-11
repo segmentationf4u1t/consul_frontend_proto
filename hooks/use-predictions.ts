@@ -18,8 +18,10 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       }
       const data: CampaignPrediction = await response.json();
       setPredictions(prev => new Map(prev).set(campaignName, data));
+      return data;
     } catch (error) {
       console.error(`Failed to fetch prediction for ${campaignName}:`, error);
+      throw error;
     }
   }, []);
 
@@ -39,30 +41,28 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
       const campaignNames = campaigns.map(c => c.kampanie);
 
       try {
-        const promises = campaignNames.map(async (campaignName) => {
-          const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`, withAuth());
-          if (!response.ok) {
-            throw new Error(`Prediction fetch failed with status: ${response.status}`);
-          }
-          const data: CampaignPrediction = await response.json();
-          return { campaignName, data };
-        });
-
-        const results = await Promise.all(promises);
-
-        if (isMounted) {
-          const newPredictions = new Map<string, CampaignPrediction>();
-          results.forEach(({ campaignName, data }) => {
+        const newPredictions = new Map<string, CampaignPrediction>();
+        for (const campaignName of campaignNames) {
+          if (!isMounted) break;
+          try {
+            const response = await fetch(`${API_BASE_URL}/predictions/campaigns/${encodeURIComponent(campaignName)}`, withAuth());
+            if (!response.ok) throw new Error(`Prediction fetch failed with status: ${response.status}`);
+            const data: CampaignPrediction = await response.json();
             newPredictions.set(campaignName, data);
-          });
-          setPredictions(newPredictions);
-          setIsLoading(false);
+            // update progressively
+            setPredictions(prev => {
+              const next = new Map(prev);
+              next.set(campaignName, data);
+              return next;
+            });
+          } catch (e) {
+            console.error(`Failed to fetch prediction for ${campaignName}:`, e);
+          }
+          // Small delay to avoid CPU/memory spikes on low-RAM devices
+          await new Promise(res => setTimeout(res, 150));
         }
-      } catch (error) {
-        console.error('Failed to fetch predictions:', error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -75,5 +75,10 @@ export const usePredictions = (campaigns: CampaignData[] | undefined) => {
     };
   }, [campaigns]);
 
-  return { predictions, isLoading };
+  const refreshPrediction = useCallback(async (campaignName: string) => {
+    // simple targeted refresh via existing GET endpoint
+    return fetchPrediction(campaignName);
+  }, [fetchPrediction]);
+
+  return { predictions, isLoading, refreshPrediction };
 };

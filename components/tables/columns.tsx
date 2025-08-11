@@ -39,9 +39,10 @@ interface ColumnsOptions {
   isMobile?: boolean;
   isTablet?: boolean;
   summaries?: Map<string, Summary>;
+  onGenerate?: (campaign: string) => Promise<void> | void;
 }
 
-export const columns = ({ showPredictions, isMobile = false, isTablet = false, summaries }: ColumnsOptions): ColumnDef<TableRowData>[] => {
+export const columns = ({ showPredictions, isMobile = false, isTablet = false, summaries, onGenerate }: ColumnsOptions): ColumnDef<TableRowData>[] => {
   // Define all possible columns
   const allColumns: ColumnDef<TableRowData>[] = [
     {
@@ -417,6 +418,32 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
       size: isMobile ? 100 : 140,
     };
     allColumns.splice(5, 0, predictionColumn);
+
+    // Add actions column next to prediction for manual generate
+    const actionsColumn: ColumnDef<TableRowData> = {
+      id: 'actions',
+      header: () => (
+        <div className="px-2 text-muted-foreground">Akcje</div>
+      ),
+      cell: ({ row }) => {
+        const isTotal = row.original.isTotal;
+        const kampanie = row.original.kampanie;
+        if (isTotal) return <div />;
+        return (
+          <div className="flex items-center">
+            <Button
+              size={isMobile ? 'sm' : 'sm'}
+              variant="outline"
+              onClick={(e) => { e.stopPropagation(); onGenerate?.(kampanie); }}
+            >
+              Generuj
+            </Button>
+          </div>
+        );
+      },
+      size: isMobile ? 90 : 110,
+    };
+    allColumns.splice(6, 0, actionsColumn);
   }
 
   // Filter columns based on screen size
