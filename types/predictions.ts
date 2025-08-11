@@ -4,6 +4,9 @@ export interface CampaignPrediction {
   currentCalls: number;
   modelUsed: string;
   lastUpdated: string;
+  // Optional predictive intervals when available (e.g., Prophet)
+  p80Low?: number;
+  p80High?: number;
 }
 
 export interface CampaignVarianceDay {

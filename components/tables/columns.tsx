@@ -370,11 +370,15 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
           return <div className={`text-center font-bold text-foreground ${isMobile ? 'text-xs' : ''}`}></div>;
         }
 
-        if (!prediction || prediction.predictedTotalCalls < 0) {
+        const target = prediction && typeof prediction.p80High === 'number'
+          ? prediction.p80High
+          : (prediction?.predictedTotalCalls ?? -1);
+
+        if (!prediction || target < 0) {
           return <div className={`text-center text-muted-foreground ${isMobile ? 'text-xs' : ''}`}>-</div>;
         }
         
-        const progress = (polaczenia / prediction.predictedTotalCalls) * 100;
+        const progress = (polaczenia / target) * 100;
         const progressClamped = Math.min(progress, 100);
         const isValidProgress = !isNaN(progress) && isFinite(progress);
 
@@ -386,7 +390,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
                   <div className="flex flex-col flex-1 gap-1">
                     <div className={`flex justify-between items-center ${isMobile ? 'text-xs' : 'text-sm'}`}>
                       <span className="text-muted-foreground">{polaczenia}</span>
-                      <span className="font-semibold">{prediction.predictedTotalCalls}</span>
+                      <span className="font-semibold">{target}</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5">
                       <div 
@@ -406,7 +410,7 @@ export const columns = ({ showPredictions, isMobile = false, isTablet = false, s
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="font-semibold">{`${polaczenia} / ${prediction.predictedTotalCalls}`}</p>
+                <p className="font-semibold">{`${polaczenia} / ${target}`}</p>
                 <p>{`Progres: ${isValidProgress ? progress.toFixed(1) : 'N/A'}%`}</p>
                 <p className="text-xs text-muted-foreground">Model: {prediction.modelUsed}</p>
               </TooltipContent>
