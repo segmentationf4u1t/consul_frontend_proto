@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { API_BASE_URL, withAuth } from '@/lib/api-config'
 import type { CampaignPredictionVariance } from '@/types/predictions'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { HelpCircle } from 'lucide-react'
 
 function MiniOverlay({ days }: { days: { day: string; predicted: number; actual: number }[] }) {
   if (!days || days.length === 0) return null
@@ -56,7 +58,24 @@ export function CampaignVarianceMini({ campaign }: { campaign: string }) {
     <div className="space-y-1">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>Prognoza vs Rzeczywiste</span>
-        <span className="font-mono">{loading ? '…' : mape === null ? 'brak' : `${mape.toFixed(1)}%`}</span>
+        <div className="flex items-center gap-1">
+          <span className="font-mono">{loading ? '…' : mape === null ? 'brak' : `${mape.toFixed(1)}%`}</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button aria-label="Co oznacza ten procent?" className="text-muted-foreground hover:text-foreground">
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left" align="end" className="max-w-xs">
+                <div className="space-y-1">
+                  <p className="text-xs"><span className="font-semibold">Procent</span>: to MAPE (średni bezwzględny błąd procentowy) między prognozą a rzeczywistą liczbą połączeń dla ostatnich dni. 0% oznacza idealne dopasowanie; np. 10% to średnio o 10% odchylenia.</p>
+                  <p className="text-xs"><span className="font-semibold">Mini‑overlay</span>: dwie linie dla kolejnych dni (najnowszy po prawej) — szara: prognoza, kolor: rzeczywiste. Oś Y jest automatycznie przeskalowana do zakresu wartości w tym oknie.</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
       <MiniOverlay days={days} />
     </div>

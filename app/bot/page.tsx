@@ -241,43 +241,12 @@ export default function BotPage() {
               <div className="p-4 space-y-4">
                 {selectedCampaign && (
                   <>
-                    {/* Recent sparkline from client buffer */}
-                    <div className="rounded-md border p-3">
-                      <div className="text-[11px] text-muted-foreground mb-1">Ostatnie aktualizacje</div>
-                      <SparklineInline values={(recentBuffer[selectedCampaign] ?? []).map(v => v.total)} />
-                    </div>
+             
+                   
                     {/* Forecast variance mini chart */}
                     <div className="rounded-md border p-3">
                       <CampaignVarianceMini campaign={selectedCampaign} />
                     </div>
-                    {/* Best weekday and last 7 days */}
-                    {selectedSummary && (
-                      <div className="rounded-md border p-3">
-                        <div className="grid grid-cols-1 gap-3 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Najlepszy dzień tygodnia</span>
-                            {(() => {
-                              const arr = (selectedSummary.weekdayTotals?.length ? selectedSummary.weekdayTotals : selectedSummary.weekdayAverages?.map(a => ({ weekday: a.weekday, total: a.avgTotal })) ?? []);
-                              if (!arr.length) return <span className="font-mono">—</span>;
-                              const best = arr.reduce((m, x) => x.total > m.total ? x : m, arr[0]);
-                              return <span className="font-mono">{weekdayNames[best.weekday]} • {Math.round(best.total)}</span>;
-                            })()}
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-muted-foreground mb-1">Ostatnie 7 dni</div>
-                            <div className="flex flex-wrap gap-1">
-                              {(selectedSummary.recentDailyTotals ?? []).map((d) => (
-                                <div key={d.dateLocal} className="text-[11px] px-1.5 py-0.5 rounded bg-muted/50">
-                                  <span className="font-mono">{d.dateLocal}</span>
-                                  <span className="mx-1">•</span>
-                                  <span className="font-mono">{d.total}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                     {/* Historical summary for selected campaign */}
                     <HistoricalSummary campaign={selectedCampaign} onSummaryLoaded={setSelectedSummary} />
                   </>

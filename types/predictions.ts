@@ -9,6 +9,15 @@ export interface CampaignPrediction {
   p80High?: number;
 }
 
+export interface OfficialPrediction {
+  campaign: string;
+  predictedTotalCalls: number;
+  currentCalls: number;
+  trendMultiplier: number;
+  predictionType: 'official_0800' | 'official_1200' | string;
+  timestamp: string; // ISO
+}
+
 export interface CampaignVarianceDay {
   day: string;
   predicted: number;
